@@ -1,0 +1,10 @@
+${AnsiColor.BRIGHT_YELLOW}
+──▄──▄────▄▀     ██████  ██  ██████  ██████  ███████ ███    ██  ██████ ██   ██
+───▀▄─█─▄▀▄▄▄    ██   ██ ██ ██       ██   ██ ██      ████   ██ ██      ██   ██
+▄██▄████▄██▄▀█▄  ██████  ██ ██   ███ ██████  █████   ██ ██  ██ ██      ███████
+─▀▀─█▀█▀▄▀███▀   ██   ██ ██ ██    ██ ██   ██ ██      ██  ██ ██ ██      ██   ██
+──▄▄▀─█──▀▄▄     ██████  ██  ██████  ██████  ███████ ██   ████  ██████ ██   ██
+${AnsiColor.BRIGHT_GREEN}${application.title:BigBench}${application.formatted-version: v1.0.0} ${AnsiColor.CYAN}powered by Spring Boot${spring-boot.formatted-version}
+${AnsiColor.BRIGHT_GREEN}Active profiles: ${AnsiColor.BRIGHT_MAGENTA}${spring.profiles.active}
+${AnsiColor.BRIGHT_GREEN}   Database URL: ${AnsiColor.CYAN}${spring.datasource.url}
+${AnsiColor.BRIGHT_GREEN}        API URL: ${AnsiColor.CYAN}http://${server.address:localhost}:${server.port:9090}${AnsiColor.DEFAULT}

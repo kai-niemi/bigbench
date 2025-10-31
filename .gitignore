@@ -1,0 +1,7 @@
+.idea/
+.mvn/
+target/
+work/
+.DS_Store
+.DS_Store?
+Thumbs.db

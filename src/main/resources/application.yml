@@ -1,0 +1,96 @@
+########################
+# Spring boot properties
+# http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+########################
+spring:
+  config:
+    import: optional:file:./samples/
+  profiles:
+    active: default
+  application:
+    name: bigbench
+  output:
+    ansi:
+      enabled: always
+  shell:
+    interactive:
+      enabled: true
+    command:
+      script:
+        enabled: false
+    script:
+      enabled: true
+    version:
+      enabled: true
+      showBuildName: true
+      showGitBranch: true
+    history:
+      name: work/bigbench.history
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: never
+  jackson:
+    serialization:
+      indent_output: true
+      write_dates_as_timestamps: false
+    deserialization:
+      fail_on_unknown_properties: false
+      fail_on_ignored_properties: false
+    default-property-inclusion: non_null
+    locale: en_US
+  datasource:
+    url: jdbc:postgresql://localhost:26257/defaultdb?sslmode=disable
+    driver-class-name: org.postgresql.Driver
+    username: root
+    password:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 0
+      initialization-fail-timeout: -1
+      connection-timeout: 5000
+      pool-name: bigbench-pool
+      auto-commit: true
+      read-only: true
+  mvc:
+    problemdetails:
+      enabled: true
+#############################
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,shutdown,env,threaddump,metrics
+##################################
+server:
+  port: 9090
+  error:
+    whitelabel:
+      enabled: false
+    include-stacktrace: always
+    include-message: always
+    include-binding-errors: always
+    include-exception: true
+  compression:
+    enabled: false
+    min-response-size: 256
+    mime-types: application/octet-stream,application/prs.hal-forms+json,text/plain,application/vnd.apache.avro.schema
+#################################
+logging:
+  pattern:
+    console: "%clr(%d{${LOG_DATEFORMAT_PATTERN:HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:%5p}) [%t] %clr([%logger{39}]){cyan} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+    file: "%d{${LOG_DATEFORMAT_PATTERN:yyyy-MM-dd HH:mm:ss.SSS}} ${LOG_LEVEL_PATTERN:%5p} [%t] %logger{49} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+  file:
+    name: work/bigbench.log
+  logback:
+    rollingpolicy:
+      max-history: 3
+#################################
+model:
+  csv-options:
+    delimiter: ","
+    allow_quoted_null: "(blank)"
+    skip: "1"
+  avro-options:
+    strict_validation: "(blank)"

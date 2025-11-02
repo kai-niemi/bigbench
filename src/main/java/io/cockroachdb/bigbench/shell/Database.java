@@ -1,6 +1,8 @@
 package io.cockroachdb.bigbench.shell;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.sql.DataSource;
@@ -23,6 +25,7 @@ import io.cockroachdb.bigbench.jdbc.MetaDataUtils;
 import io.cockroachdb.bigbench.jdbc.TableModel;
 import io.cockroachdb.bigbench.shell.support.AnotherFileValueProvider;
 import io.cockroachdb.bigbench.shell.support.AnsiConsole;
+import io.cockroachdb.bigbench.shell.support.ListTableModel;
 import io.cockroachdb.bigbench.shell.support.TableNameProvider;
 import io.cockroachdb.bigbench.shell.support.TableUtils;
 import io.cockroachdb.bigbench.util.graph.DirectedAcyclicGraph;
@@ -36,7 +39,7 @@ public class Database {
     @Autowired
     private AnsiConsole ansiConsole;
 
-    @ShellMethod(value = "Execute SQL file", key = {"db-exec", "dbe"})
+    @ShellMethod(value = "Execute SQL file", key = {"exec-file", "ef"})
     public void createSchema(@ShellOption(help = "path to DDL/DML file",
             valueProvider = AnotherFileValueProvider.class) String path) {
 
@@ -49,46 +52,38 @@ public class Database {
         DatabasePopulatorUtils.execute(populator, dataSource);
     }
 
-    @ShellMethod(value = "Print connection pool stats", key = {"db-pool-stats", "dbps"})
+    @ShellMethod(value = "Print connection pool stats", key = {"pool-stats", "ps"})
     public void connectionPoolStats() {
         try {
             HikariDataSource hikariDataSource = dataSource.unwrap(HikariDataSource.class);
 
-            ansiConsole.cyan("""
-                            << Configuration >>
-                                         name: %s
-                              maximumPoolSize: %s
-                                  minimumIdle: %s
-                                  idleTimeout: %s
-                                 loginTimeout: %s
-                                  maxLifetime: %s
-                            validationTimeout: %s
-                            %s""",
-                    hikariDataSource.getPoolName(),
-                    hikariDataSource.getMaximumPoolSize(),
-                    hikariDataSource.getMinimumIdle(),
-                    hikariDataSource.getIdleTimeout(),
-                    hikariDataSource.getLoginTimeout(),
-                    hikariDataSource.getMaxLifetime(),
-                    hikariDataSource.getValidationTimeout(),
-                    "https://www.javadoc.io/doc/com.zaxxer/HikariCP/latest/com/zaxxer/hikari/HikariDataSource.html"
-            ).nl();
+            List<List<?>> tuples = new ArrayList<>();
+            tuples.add(List.of("name", hikariDataSource.getPoolName()));
+            tuples.add(List.of("maximumPoolSize", hikariDataSource.getMaximumPoolSize()));
+            tuples.add(List.of("minimumIdle", hikariDataSource.getMinimumIdle()));
+            tuples.add(List.of("idleTimeout", hikariDataSource.getIdleTimeout()));
+            tuples.add(List.of("loginTimeout", hikariDataSource.getLoginTimeout()));
+            tuples.add(List.of("maxLifetime", hikariDataSource.getMaxLifetime()));
+            tuples.add(List.of("validationTimeout", hikariDataSource.getValidationTimeout()));
+
+            ansiConsole.yellow("Configuration:").nl();
+            ansiConsole.cyan(TableUtils.prettyPrint(
+                    new ListTableModel(tuples, List.of("Property", "Value"))
+            )).nl();
 
             HikariPoolMXBean hikariPool = hikariDataSource.getHikariPoolMXBean();
 
-            ansiConsole.cyan("""
-                            << Metrics >>
-                                    activeConnections: %s
-                                      idleConnections: %s
-                            threadsAwaitingConnection: %s
-                                     totalConnections: %s
-                            %s""",
-                    hikariPool.getActiveConnections(),
-                    hikariPool.getIdleConnections(),
-                    hikariPool.getThreadsAwaitingConnection(),
-                    hikariPool.getTotalConnections(),
-                    "https://www.javadoc.io/doc/com.zaxxer/HikariCP/latest/com/zaxxer/hikari/HikariPoolMXBean.html"
-            ).nl();
+            tuples.clear();
+            tuples.add(List.of("activeConnections", hikariPool.getActiveConnections()));
+            tuples.add(List.of("idleConnections", hikariPool.getIdleConnections()));
+            tuples.add(List.of("threadsAwaitingConnection", hikariPool.getThreadsAwaitingConnection()));
+            tuples.add(List.of("totalConnections", hikariPool.getTotalConnections()));
+
+            ansiConsole.yellow("Metrics:").nl();
+            ansiConsole.cyan(TableUtils.prettyPrint(
+                    new ListTableModel(tuples, List.of("Property", "Value"))
+            )).nl();
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -99,7 +94,7 @@ public class Database {
         ansiConsole.cyan("%s", MetaDataUtils.databaseVersion(dataSource)).nl();
     }
 
-    @ShellMethod(value = "List tables", key = {"db-tables", "dbt"})
+    @ShellMethod(value = "List tables", key = {"tables", "t"})
     public void listTables(
             @ShellOption(help = "table schema", defaultValue = "public") String schema,
             @ShellOption(help = "table name(s)", defaultValue = "*",
@@ -122,7 +117,7 @@ public class Database {
         });
     }
 
-    @ShellMethod(value = "List columns", key = {"db-columns", "dbc"})
+    @ShellMethod(value = "List columns", key = {"columns", "c"})
     public void listColumns(
             @ShellOption(help = "table schema", defaultValue = "public") String schema,
             @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
@@ -141,7 +136,7 @@ public class Database {
                 });
     }
 
-    @ShellMethod(value = "Show create table", key = {"db-show-table", "dbs"})
+    @ShellMethod(value = "Show create table", key = {"show-table", "st"})
     public void showCreateTable(
             @ShellOption(help = "table schema", defaultValue = "public") String schema,
             @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
@@ -152,7 +147,7 @@ public class Database {
                 });
     }
 
-    @ShellMethod(value = "List foreign keys", key = {"db-foreign-keys", "dbfk"})
+    @ShellMethod(value = "List foreign keys", key = {"foreign-keys", "fk"})
     public void listForeignKeys(
             @ShellOption(help = "table schema", defaultValue = "public") String schema,
             @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
@@ -172,7 +167,7 @@ public class Database {
                 });
     }
 
-    @ShellMethod(value = "List primary keys", key = {"db-primary-keys", "dbpk"})
+    @ShellMethod(value = "List primary keys", key = {"primary-keys", "pk"})
     public void listPrimaryKeys(
             @ShellOption(help = "table schema", defaultValue = "public") String schema,
             @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
@@ -192,7 +187,7 @@ public class Database {
                 });
     }
 
-    @ShellMethod(value = "List table topology", key = {"db-topology", "dby"})
+    @ShellMethod(value = "Print table topology", key = {"topology", "tt"})
     public void listTopology(@ShellOption(help = "table schema", defaultValue = "public") String schema,
                              @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
                              String tableNames) {

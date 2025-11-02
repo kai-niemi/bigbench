@@ -46,11 +46,15 @@ See the [building](#building) section for prerequisites.
 
 Create the database:
 
-    cockroach sql --insecure --host=localhost -e "CREATE DATABASE bigbench"
+```postgresql
+cockroach sql --insecure --host=localhost -e "CREATE DATABASE bigbench"
+```
 
 Load a sample schema:
 
-    cockroach sql --insecure --host=localhost --database bigbench < samples/create-default.sql
+```postgresql
+cockroach sql --insecure --host=localhost --database bigbench < samples/create-default.sql
+```
 
 # Usage
 
@@ -62,34 +66,46 @@ basis. In this example, we use the `customer` table with its schema defined in [
 
 First start the app providing the streaming endpoints:
 
-    ./start.sh
+```shell
+./start.sh
+```
 
 Check that its running and can access the database:
 
-    curl http://localhost:9090/public/customer.csv?rows=10
+```shell
+curl http://localhost:9090/public/customer.csv?rows=10
+```
                       
 The API index root is http://localhost:9090/.
                                     
 Create an `IMPORT INTO` SQL file for each format with 10K rows:
-        
-    curl --output work/customer-csv.sql http://localhost:9090/public/customer/csv/import-into.sql?rows=10K
-    curl --output work/customer-avro.sql http://localhost:9090/public/customer/avro/import-into.sql?rows=10K
 
+```shell     
+curl --output work/customer-csv.sql http://localhost:9090/public/customer/csv/import-into.sql?rows=10K
+curl --output work/customer-avro.sql http://localhost:9090/public/customer/avro/import-into.sql?rows=10K
+```
+`
 Because the `IMPORT INTO` command take tables offline we can't use introspection to read the schema. Instead, 
 we preload the table schema on the server (in-memory):
 
-    curl --output work/customer-csv.json http://localhost:9090/public/customer.csv/form?rows=10K
-    curl --output work/customer-avro.json http://localhost:9090/public/customer.avro/form?rows=10K
+```shell
+curl --output work/customer-csv.json http://localhost:9090/public/customer.csv/form?rows=10K
+curl --output work/customer-avro.json http://localhost:9090/public/customer.avro/form?rows=10K
+```
 
 Optionally, you can edit the json files above to change the row count, column generators or any other details before 
 POSTing them back for ephemeral storage:
 
-    curl -d "@work/customer-csv.json" -H "Content-Type:application/json" -X POST http://localhost:9090/public/customer.csv/form
-    curl -d "@work/customer-avro.json" -H "Content-Type:application/json" -X POST http://localhost:9090/public/customer.avro/form
+```shell
+curl -d "@work/customer-csv.json" -H "Content-Type:application/json" -X POST http://localhost:9090/public/customer.csv/form
+curl -d "@work/customer-avro.json" -H "Content-Type:application/json" -X POST http://localhost:9090/public/customer.avro/form
+```
 
 Now were all set and can go ahead and start the imports:
 
-    cockroach sql --insecure --host=localhost --database bigbench < work/customer-csv.sql
+```postgresql
+cockroach sql --insecure --host=localhost --database bigbench < work/customer-csv.sql
+```
 
 Should output 60K rows:
 
@@ -101,16 +117,22 @@ Should output 60K rows:
 
 Repeat the same for avro:
 
-    cockroach sql --insecure --host=localhost --database bigbench < work/customer-avro.sql
-   
+```postgresql
+cockroach sql --insecure --host=localhost --database bigbench < work/customer-avro.sql
+```
+
 _Hint: If your import jobs get stuck you can cancel them using this command:_
 
-    CANCEL JOBS (WITH x AS (SHOW JOBS) SELECT job_id FROM x WHERE job_type='IMPORT' and status not in('failed','succeeded'))
-    SELECT * FROM [show jobs] WHERE job_type='IMPORT' and status not in ('failed','succeeded');
-    
+```postgresql
+CANCEL JOBS (WITH x AS (SHOW JOBS) SELECT job_id FROM x WHERE job_type='IMPORT' and status not in('failed','succeeded'))
+SELECT * FROM [show jobs] WHERE job_type='IMPORT' and status not in ('failed','succeeded');
+```
+
 After the import is completed, you can verify that there's data:
 
-    cockroach sql --insecure --host=localhost --database bigbench -e "select count(1) from customer"
+```postgresql
+cockroach sql --insecure --host=localhost --database bigbench -e "select count(1) from customer"
+```
 
 ## COPY using CSV or Avro OCF streams over HTTP
 
@@ -118,39 +140,87 @@ One alternative to `IMPORT INTO` that takes the tables offline is to use `COPY .
 
 First start the app providing the streaming endpoints:
 
-    ./start.sh
-
+```shell
+./start.sh
+```
+`
 Check that its running and can access the database:
 
-    curl http://localhost:9090/public/customer.csv?rows=10
+```shell
+curl http://localhost:9090/public/customer.csv?rows=10
+```
 
 Generate an `IMPORT INTO` SQL file:
 
-    curl --output work/customer-csv.sql http://localhost:9090/public/customer/csv/import-into.sql?rows=10K
+```shell
+curl --output work/customer-csv.sql http://localhost:9090/public/customer/csv/import-into.sql?rows=10K
+```
 
 Create a credentials file for `cockroach sql`: 
 
-    echo "--insecure --database bigbench" > work/credentials.txt
+```shell
+echo "--insecure --database bigbench" > work/credentials.txt
+```
 
 Create a header file for copying the `customer` table from stdin that will be piped:
 
-    echo "COPY customer FROM STDIN WITH CSV DELIMITER ',' HEADER;" > work/header.csv
+```shell
+echo "COPY customer FROM STDIN WITH CSV DELIMITER ',' HEADER;" > work/header.csv
+```
 
 Now go ahead and start the import:
 
-    curl http://localhost:9090/public/customer.csv?rows=10K | cat work/header.csv - | cockroach sql $( cat work/credentials.txt )
+```shell
+curl http://localhost:9090/public/customer.csv?rows=10K | cat work/header.csv - | cockroach sql $( cat work/credentials.txt )
+```
 
 ## INSERT batch statements with array unnesting
 
-tbd
+Create a command file with the `array-insert` shell command and run:
+
+```shell
+echo "array-insert" > cmd.txt
+echo "quit" >> cmd.txt
+./run.sh @cmd.txt
+```
+
+To see all command options, start the shell and run:
+
+```shell
+help array-insert
+```
 
 ## INSERT batch statements with driver multi-value rewrites
 
-tbd
+Create a command file with the `batch-insert` shell command and run:
+
+```shell
+echo "batch-insert" > cmd.txt
+echo "quit" >> cmd.txt
+./run.sh @cmd.txt
+```
+
+To see all command options, start the shell and run:
+
+```shell
+help batch-insert
+```
 
 ## INSERT singleton statements
 
-tbd
+Create a command file with the `singleton-insert` shell command and run:
+
+```shell
+echo "singleton-insert" > cmd.txt
+echo "quit" >> cmd.txt
+./run.sh @cmd.txt
+```
+
+To see all command options, start the shell and run:
+
+```shell
+help singleton-insert
+```
 
 # Building
 
@@ -168,13 +238,17 @@ tbd
 
 Ubuntu:
 
-    sudo apt-get install openjdk-21-jdk
+```shell
+sudo apt-get install openjdk-21-jdk
+```
 
 MacOS (using sdkman):
 
-    curl -s "https://get.sdkman.io" | bash
-    sdk list java
-    sdk install java 21.. (pick version)  
+```shell
+curl -s "https://get.sdkman.io" | bash
+sdk list java
+sdk install java 21.. (pick version)  
+```
 
 ## Install CockroachDB
 
@@ -190,11 +264,15 @@ You can run CockroachDB in single node mode or a full self-hosted cluster.
 
 Clone the project:
 
-    git clone git@github.com:kai-niemi/bigbench.git && cd bigbench
+```shell
+git clone git@github.com:kai-niemi/bigbench.git && cd bigbench
+```
 
 Build a single, executable JAR:
 
-    ./mvnw clean install
+```shell
+./mvnw clean install
+```
 
 # Terms of Use
 

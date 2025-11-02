@@ -5,7 +5,9 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,8 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 
 import io.cockroachdb.bigbench.shell.support.AnsiConsole;
+import io.cockroachdb.bigbench.shell.support.ListTableModel;
+import io.cockroachdb.bigbench.shell.support.TableUtils;
 
 @ShellComponent
 @ShellCommandGroup(CommandGroups.ADMIN_COMMANDS)
@@ -27,7 +31,7 @@ public class Admin {
     @Autowired
     private AnsiConsole ansiConsole;
 
-    @ShellMethod(value = "Print local system information", key = {"system-info", "si"})
+    @ShellMethod(value = "Print local system information", key = {"system-info", "i"})
     public void systemInfo() {
         OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
         ansiConsole.yellow(">> OS\n");
@@ -65,23 +69,21 @@ public class Admin {
     @ShellMethod(value = "Print thread pool metrics", key = {"thread-pool-stats", "tps"})
     public void threadPoolStats() {
         ThreadPoolExecutor tpe = asyncTaskExecutor.getThreadPoolExecutor();
-        ansiConsole.cyan("""
-                                   running: %s
-                                  poolSize: %s
-                           maximumPoolSize: %s
-                              corePoolSize: %s
-                               activeCount: %s
-                        completedTaskCount: %s
-                                 taskCount: %s
-                           largestPoolSize: %s""",
-                asyncTaskExecutor.isRunning(),
-                tpe.getPoolSize(),
-                tpe.getMaximumPoolSize(),
-                tpe.getCorePoolSize(),
-                tpe.getActiveCount(),
-                tpe.getCompletedTaskCount(),
-                tpe.getTaskCount(),
-                tpe.getLargestPoolSize()
-        ).nl();
+
+        List<List<?>> tuples = new ArrayList<>();
+        tuples.add(List.of("running", asyncTaskExecutor.isRunning()));
+        tuples.add(List.of("poolSize", tpe.getPoolSize()));
+        tuples.add(List.of("maximumPoolSize", tpe.getMaximumPoolSize()));
+        tuples.add(List.of("corePoolSize", tpe.getCorePoolSize()));
+        tuples.add(List.of("activeCount", tpe.getActiveCount()));
+        tuples.add(List.of("completedTaskCount", tpe.getCompletedTaskCount()));
+        tuples.add(List.of("taskCount", tpe.getTaskCount()));
+        tuples.add(List.of("largestPoolSize", tpe.getLargestPoolSize()));
+
+        String table = TableUtils.prettyPrint(
+                new ListTableModel(tuples, List.of("Property", "Value"))
+        );
+
+        ansiConsole.cyan(table).nl();
     }
 }

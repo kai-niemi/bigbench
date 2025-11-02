@@ -55,7 +55,7 @@ public class Dml {
 
     private static ErrorHandler<DataAccessException> transientErrorStrategy = ErrorStrategy.LOG_AND_CONTINUE;
 
-    private static ErrorHandler<DataAccessException> nonTransientErrorStrategy = ErrorStrategy.LOG_AND_CONTINUE;
+    private static ErrorHandler<DataAccessException> nonTransientErrorStrategy = ErrorStrategy.RETHROW;
 
     @Autowired
     private HypermediaClient hypermediaClient;
@@ -63,18 +63,15 @@ public class Dml {
     @Autowired
     private DataSource dataSource;
 
-    @ShellMethod(value = "Use transient SQL error handling strategy", key = {"transient-error-strategy"})
-    public void toggleTransientErrorStrategy(@ShellOption(help = "error strategy",
-            valueProvider = EnumValueProvider.class) ErrorStrategy errorStrategy) {
-        Dml.transientErrorStrategy = errorStrategy;
-        logger.info("Using " + errorStrategy);
-    }
-
-    @ShellMethod(value = "Use non-transient SQL error handling strategy", key = {"non-transient-error-strategy"})
-    public void toggleNonTransientErrorStrategy(@ShellOption(help = "error strategy", defaultValue = "public",
-            valueProvider = EnumValueProvider.class) ErrorStrategy errorStrategy) {
-        Dml.nonTransientErrorStrategy = errorStrategy;
-        logger.info("Using " + errorStrategy);
+    @ShellMethod(value = "Set SQL error handling strategy", key = {"error-strategy", "es"})
+    public void toggleErrorStrategy(@ShellOption(help = "transient errors",
+                                            valueProvider = EnumValueProvider.class) ErrorStrategy transientErrorStrategy,
+                                    @ShellOption(help = "non-transient errors",
+                                            valueProvider = EnumValueProvider.class) ErrorStrategy nonTransientErrorStrategy) {
+        Dml.transientErrorStrategy = transientErrorStrategy;
+        Dml.nonTransientErrorStrategy = nonTransientErrorStrategy;
+        logger.info("Using transient strategy: " + transientErrorStrategy);
+        logger.info("Using non-transient strategy: " + nonTransientErrorStrategy);
     }
 
     @ShellMethod(value = "Batch INSERT from CSV stream", key = {"batch-insert", "bi"})
@@ -85,9 +82,11 @@ public class Dml {
                             @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
                             @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
                             @ShellOption(help = "CSV column delimiter", defaultValue = ",") String delimiter,
-                            @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false") boolean onConflictDoNothing,
+                            @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false")
+                            boolean onConflictDoNothing,
                             @ShellOption(help = "use UPSERT instead of INSERT", defaultValue = "false") boolean upsert,
-                            @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/") String endpoint
+                            @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/")
+                            String endpoint
     ) {
         int rowNum = Multiplier.parseInt(rows);
 
@@ -115,9 +114,11 @@ public class Dml {
                             @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
                             @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
                             @ShellOption(help = "CSV column delimiter", defaultValue = ",") String delimiter,
-                            @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false") boolean onConflictDoNothing,
+                            @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false")
+                            boolean onConflictDoNothing,
                             @ShellOption(help = "use UPSERT instead of INSERT", defaultValue = "false") boolean upsert,
-                            @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/") String endpoint
+                            @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/")
+                            String endpoint
     ) {
         int rowNum = Multiplier.parseInt(rows);
 
@@ -145,9 +146,12 @@ public class Dml {
                                 @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
                                 @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
                                 @ShellOption(help = "CSV column delimiter", defaultValue = ",") String delimiter,
-                                @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false") boolean onConflictDoNothing,
-                                @ShellOption(help = "use UPSERT instead of INSERT", defaultValue = "false") boolean upsert,
-                                @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/") String endpoint
+                                @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false")
+                                boolean onConflictDoNothing,
+                                @ShellOption(help = "use UPSERT instead of INSERT", defaultValue = "false")
+                                boolean upsert,
+                                @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/")
+                                String endpoint
     ) {
         int rowNum = Multiplier.parseInt(rows);
 

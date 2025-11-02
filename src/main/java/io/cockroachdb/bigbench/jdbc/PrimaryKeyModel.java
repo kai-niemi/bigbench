@@ -1,4 +1,4 @@
-package io.cockroachdb.bigbench.repository;
+package io.cockroachdb.bigbench.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

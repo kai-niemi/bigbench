@@ -2,6 +2,7 @@ package io.cockroachdb.bigbench.config;
 
 import io.cockroachdb.bigbench.shell.support.AnotherFileValueProvider;
 import io.cockroachdb.bigbench.shell.support.FunctionValueProvider;
+import io.cockroachdb.bigbench.shell.support.SchemaNameProvider;
 import io.cockroachdb.bigbench.shell.support.TableNameProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,11 @@ public class ShellConfiguration {
     @Bean
     public FunctionValueProvider functionValueProvider() {
         return new FunctionValueProvider();
+    }
+
+    @Bean
+    public SchemaNameProvider schemaNameProvider() {
+        return new SchemaNameProvider();
     }
 
     @Bean

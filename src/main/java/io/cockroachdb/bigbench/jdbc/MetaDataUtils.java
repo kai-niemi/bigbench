@@ -1,4 +1,4 @@
-package io.cockroachdb.bigbench.repository;
+package io.cockroachdb.bigbench.jdbc;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public abstract class MetaDataUtils {
     public static void listTables(DataSource dataSource, String schema, ResultSetHandler handler) {
         new JdbcTemplate(dataSource).execute((ConnectionCallback<Object>) connection -> {
             ResultSet columns = connection.getMetaData()
-                    .getTables(null, schema, null, new String[]{"TABLE"});
+                    .getTables(null, "*".equals(schema) ? null : schema, null, new String[]{"TABLE"});
             handler.process(columns);
             return null;
         });

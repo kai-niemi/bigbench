@@ -58,6 +58,17 @@ public class Table {
         return Collections.unmodifiableList(columns);
     }
 
+    public List<String> getColumnNames() {
+        return columns
+                .stream()
+                .map(Column::getName)
+                .toList();
+    }
+
+    public String getColumnNamesAsString() {
+        return String.join(",", getColumnNames());
+    }
+
     public void setColumns(List<Column> columns) {
         this.columns = columns;
     }

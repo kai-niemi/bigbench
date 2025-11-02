@@ -5,6 +5,8 @@ public abstract class LinkRelations {
 
     public static final String SCHEMA_INDEX_REL = "schemas";
 
+    public static final String TABLE_REL = "table";
+
     public static final String CSV_STREAM_REL = "csv-stream";
 
     public static final String CSV_FORM_REL = "csv-form";

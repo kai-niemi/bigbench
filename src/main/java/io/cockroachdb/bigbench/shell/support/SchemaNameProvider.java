@@ -1,17 +1,18 @@
 package io.cockroachdb.bigbench.shell.support;
 
-import io.cockroachdb.bigbench.jdbc.MetaDataUtils;
-import io.cockroachdb.bigbench.jdbc.TableModel;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.CompletionContext;
 import org.springframework.shell.CompletionProposal;
 import org.springframework.shell.standard.ValueProvider;
 
-import javax.sql.DataSource;
-import java.util.ArrayList;
-import java.util.List;
+import io.cockroachdb.bigbench.jdbc.MetaDataUtils;
 
-public class TableNameProvider implements ValueProvider {
+public class SchemaNameProvider implements ValueProvider {
     @Autowired
     private DataSource dataSource;
 
@@ -19,15 +20,16 @@ public class TableNameProvider implements ValueProvider {
     public List<CompletionProposal> complete(CompletionContext completionContext) {
         List<CompletionProposal> result = new ArrayList<>();
 
-        MetaDataUtils.listTables(dataSource, "public", resultSet -> {
+        MetaDataUtils.listSchemas(dataSource, resultSet -> {
             while (resultSet.next()) {
+                String schema = resultSet.getString("TABLE_SCHEM");
+
                 String prefix = completionContext.currentWordUpToCursor();
                 if (prefix == null) {
                     prefix = "";
                 }
-                TableModel table = new TableModel(resultSet);
-                if (table.getName().startsWith(prefix)) {
-                    result.add(new CompletionProposal(table.getName()));
+                if (schema.startsWith(prefix)) {
+                    result.add(new CompletionProposal(schema));
                 }
             }
         });

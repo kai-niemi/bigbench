@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import io.cockroachdb.bigbench.config.ProfileNames;
-import io.cockroachdb.bigbench.repository.MetaDataUtils;
+import io.cockroachdb.bigbench.jdbc.MetaDataUtils;
 import io.cockroachdb.bigbench.util.RandomData;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -36,6 +36,11 @@ public class IndexController {
         resource.add(Link.of("https://www.cockroachlabs.com/docs/stable/import-into")
                 .withRel(IanaLinkRelations.CITE_AS)
                 .withType(MediaType.TEXT_HTML_VALUE));
+
+        resource.add(linkTo(methodOn(TableController.class)
+                .getTable(null, null))
+                .withRel(LinkRelations.TABLE_REL)
+                .withTitle("Table schema"));
 
         MetaDataUtils.listSchemas(dataSource, rs -> {
             while (rs.next()) {

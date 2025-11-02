@@ -51,16 +51,27 @@ public class CsvStreamController extends AbstractStreamController {
     public ResponseEntity<StreamingResponseBody> streamTableInCSVFormat(
             @PathVariable(name = "schema") String schema,
             @PathVariable(name = "name") String name,
-            @RequestParam(required = false) MultiValueMap<String, String> valueMap,
-            @RequestHeader(value = HttpHeaders.ACCEPT_ENCODING, required = false, defaultValue = "")
-            String acceptEncoding) {
-        logger.debug(">> streamTableInCSVFormat: schema=%s, name=%s, params=%s, acceptEncoding=%s"
-                .formatted(schema, name, valueMap, acceptEncoding));
+            @RequestParam(required = false, name = "delimiter", defaultValue = ",") String delimiter,
+            @RequestParam(required = false, name = "quoteCharacter", defaultValue = "") String quoteCharacter,
+            @RequestParam(required = false, name = "header", defaultValue = "true") String header,
+            @RequestParam(required = false, name = "rows", defaultValue = "100") String rows,
+//            @RequestParam(required = false) MultiValueMap<String, String> _valueMap,
+            @RequestHeader(value = HttpHeaders.ACCEPT_ENCODING, required = false, defaultValue = "") String acceptEncoding) {
+        logger.debug("""
+                >> streamTableInCSVFormat:
+                    schema = %s
+                    name = %s
+                    delimiter = %s
+                    quoteCharacter = %s
+                    header = %s
+                    rows = %s
+                    acceptEncoding = %s"""
+                .formatted(schema, name, delimiter, quoteCharacter, header, rows, acceptEncoding));
 
-        final Map<String, String> allParams = Objects.requireNonNull(valueMap, "params required").toSingleValueMap();
+//        final Map<String, String> allParams = Objects.requireNonNull(valueMap, "params required").toSingleValueMap();
 
         Table table = lookupTable(QualifiedName.of(schema, name));
-        table.setRows(allParams.getOrDefault("rows", "10"));
+        table.setRows(rows);
 
         boolean gzip = acceptEncoding.contains("gzip");
 
@@ -73,15 +84,12 @@ public class CsvStreamController extends AbstractStreamController {
             headers.set(HttpHeaders.CONTENT_ENCODING, "gzip");
         }
 
-        logger.debug("<< streamTableInCSVFormat: schema=%s, name=%s, params=%s, acceptEncoding=%s"
-                .formatted(schema, name, valueMap, acceptEncoding));
-
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream -> new CsvStreamGenerator(dataSource, table, gzip)
-                        .setDelimiter(allParams.getOrDefault("delimiter", ","))
-                        .setQuoteCharacter(allParams.getOrDefault("quoteCharacter", ""))
-                        .setIncludeHeader(Boolean.parseBoolean(allParams.getOrDefault("header", "true")))
+                        .setDelimiter(delimiter)
+                        .setQuoteCharacter(quoteCharacter)
+                        .setIncludeHeader(Boolean.parseBoolean(header))
                         .streamTo(outputStream));
     }
 

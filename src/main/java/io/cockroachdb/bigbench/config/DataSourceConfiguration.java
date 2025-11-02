@@ -78,6 +78,7 @@ public class DataSourceConfiguration {
                 .build();
         ds.setAutoCommit(true);
         ds.addDataSourceProperty("ApplicationName", "bigbench");
+        ds.addDataSourceProperty("reWriteBatchedInserts", "false");
         return ds;
     }
 }

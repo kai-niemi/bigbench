@@ -31,7 +31,7 @@ public class TableModelAssembler implements RepresentationModelAssembler<Table, 
             csvParams.putIfAbsent("nodes", List.of("6"));
 
             resource.add(linkTo(methodOn(CsvStreamController.class)
-                    .streamTableInCSVFormat(entity.getSchema(), entity.getName(), csvParams, ""))
+                    .streamTableInCSVFormat(entity.getSchema(), entity.getName(), null, null, null, null, null))
                     .withRel(LinkRelations.CSV_STREAM_REL)
                     .withType(CsvStreamController.TEXT_CSV_VALUE)
                     .withTitle("Export table stream in CSV text format"));

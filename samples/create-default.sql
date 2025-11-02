@@ -1,15 +1,19 @@
 create table customer
 (
-    id         int8         not null default unordered_unique_rowid(),
-    email      varchar(128),
-    name       varchar(128),
-    password   varchar(128) not null,
-    address1   varchar(255),
-    address2   varchar(255),
-    postcode   varchar(16),
-    city       varchar(255),
-    country    varchar(36),
-    updated_at timestamptz  not null default clock_timestamp(),
+    id           int8         not null default unordered_unique_rowid(),
+    address1     varchar(255),
+    address2     varchar(255),
+    city         varchar(255),
+    country_code varchar(16),
+    country_name varchar(36),
+    postcode     varchar(16),
+    created_time timestamp    not null,
+    email        varchar(128),
+    first_name   varchar(128),
+    last_name    varchar(128),
+    password     varchar(128) not null,
+    telephone    varchar(128),
+    user_name    varchar(15)  not null,
 
     primary key (id)
 );

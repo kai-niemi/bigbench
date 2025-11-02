@@ -1,4 +1,4 @@
-package io.cockroachdb.bigbench.repository;
+package io.cockroachdb.bigbench.jdbc;
 
 import java.sql.JDBCType;
 import java.util.ArrayList;
@@ -54,6 +54,7 @@ public abstract class SchemaExporter {
         columnModels.forEach(columnModel -> {
             Column column = new Column();
             column.setName(columnModel.getName());
+            column.setTypeName(columnModel.getJdbcType().getName());
             column.setIdentity(columnModel.getIdentity());
             column.setExpression(columnModel.getExpression());
             columns.add(column);

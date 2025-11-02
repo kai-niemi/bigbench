@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.cockroachdb.bigbench.config.ProfileNames;
 import io.cockroachdb.bigbench.model.Table;
-import io.cockroachdb.bigbench.repository.SchemaExporter;
+import io.cockroachdb.bigbench.jdbc.SchemaExporter;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
@@ -32,6 +32,7 @@ public class TableController {
             @PathVariable("schema") String schema) {
         List<Table> tables = SchemaExporter.exportTablesInTopologicalOrder(
                 dataSource, schema, tableModel -> true);
+
         return ResponseEntity.ok(tableModelAssembler.toCollectionModel(tables)
                 .add(linkTo(methodOn(TableController.class)
                         .index(schema))

@@ -15,7 +15,7 @@ import io.cockroachdb.bigbench.ApplicationModel;
 import io.cockroachdb.bigbench.config.ProfileNames;
 import io.cockroachdb.bigbench.model.QualifiedName;
 import io.cockroachdb.bigbench.model.Table;
-import io.cockroachdb.bigbench.repository.SchemaExporter;
+import io.cockroachdb.bigbench.jdbc.SchemaExporter;
 
 @RestController
 @Profile(ProfileNames.HTTP)

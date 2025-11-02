@@ -9,6 +9,8 @@ public abstract class CommandGroups {
 
     public static final String DATABASE_SCHEMA_COMMANDS = "(04) Database Schema Commands";
 
+    public static final String DML_COMMANDS = "(05) DML Commands";
+
     private CommandGroups() {
     }
 }

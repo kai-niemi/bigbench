@@ -51,6 +51,7 @@ create table customer
     telephone         varchar(128),
     user_name         varchar(15)  not null,
     payment_method_id int8,
+
     primary key (id)
 );
 

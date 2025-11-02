@@ -18,9 +18,9 @@ import org.springframework.util.StringUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.HikariPoolMXBean;
 
-import io.cockroachdb.bigbench.repository.ForeignKeyModel;
-import io.cockroachdb.bigbench.repository.MetaDataUtils;
-import io.cockroachdb.bigbench.repository.TableModel;
+import io.cockroachdb.bigbench.jdbc.ForeignKeyModel;
+import io.cockroachdb.bigbench.jdbc.MetaDataUtils;
+import io.cockroachdb.bigbench.jdbc.TableModel;
 import io.cockroachdb.bigbench.shell.support.AnotherFileValueProvider;
 import io.cockroachdb.bigbench.shell.support.AnsiConsole;
 import io.cockroachdb.bigbench.shell.support.TableNameProvider;

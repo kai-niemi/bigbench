@@ -27,7 +27,7 @@ public class Expressions {
     @Autowired
     private AnsiConsole ansiConsole;
 
-    @ShellMethod(value = "Evaluate expression", key = {"expr-eval", "e"})
+    @ShellMethod(value = "Evaluate expression", key = {"eval", "e"})
     public void evaluateFunction(@ShellOption(
             value = {"expression"},
             valueProvider = FunctionValueProvider.class) String expression) {
@@ -53,7 +53,7 @@ public class Expressions {
         }
     }
 
-    @ShellMethod(value = "List expression functions and variables", key = {"expr-functions", "f"})
+    @ShellMethod(value = "List expression functions and variables", key = {"functions", "f"})
     public void listFunctions() {
         final ExpressionRegistry registry = ExpressionRegistryBuilder.build(dataSource);
 

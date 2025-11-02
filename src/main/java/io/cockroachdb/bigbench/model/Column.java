@@ -9,14 +9,11 @@ import jakarta.validation.constraints.NotNull;
 @Validated
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Column {
-    public static Column of(String name) {
-        Column column = new Column();
-        column.setName(name);
-        return column;
-    }
-
     @NotNull
     private String name;
+
+    @NotNull
+    private String typeName;
 
     private String constant;
 
@@ -29,6 +26,14 @@ public class Column {
     private ValueSet<?> valueSet;
 
     private Boolean hidden;
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
+    }
 
     public Boolean isHidden() {
         return hidden;

@@ -76,11 +76,11 @@ public class Dml {
     @ShellMethod(value = "Download and print CSV stream", key = {"download-csv", "dc"})
     public void downloadCSV(@ShellOption(help = "table schema", defaultValue = "public",
                                     valueProvider = SchemaNameProvider.class) String schema,
-                            @ShellOption(help = "table name(s)", defaultValue = "product",
+                            @ShellOption(help = "table name(s)",
                                     valueProvider = TableNameProvider.class) String table,
-                            @ShellOption(help = "number of rows to retrieve", defaultValue = "32") String rows,
+                            @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
                             @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
-                            @ShellOption(help = "CSV column delimiter", defaultValue = ";") String delimiter,
+                            @ShellOption(help = "CSV column delimiter", defaultValue = ",") String delimiter,
                             @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/")
                             String endpoint
     ) {
@@ -122,9 +122,9 @@ public class Dml {
     @ShellMethod(value = "Batch INSERT from CSV stream", key = {"batch-insert", "bi"})
     public void batchInsert(@ShellOption(help = "table schema", defaultValue = "public",
                                     valueProvider = SchemaNameProvider.class) String schema,
-                            @ShellOption(help = "table name(s)", defaultValue = "product",
+                            @ShellOption(help = "table name(s)",
                                     valueProvider = TableNameProvider.class) String table,
-                            @ShellOption(help = "number of rows to retrieve", defaultValue = "32") String rows,
+                            @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
                             @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
                             @ShellOption(help = "CSV column delimiter", defaultValue = ",") String delimiter,
                             @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false")
@@ -156,7 +156,7 @@ public class Dml {
     @ShellMethod(value = "Array INSERT from CSV stream", key = {"array-insert", "ai"})
     public void arrayInsert(@ShellOption(help = "table schema", defaultValue = "public",
                                     valueProvider = SchemaNameProvider.class) String schema,
-                            @ShellOption(help = "table name(s)", defaultValue = "customer",
+                            @ShellOption(help = "table name(s)",
                                     valueProvider = TableNameProvider.class) String table,
                             @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
                             @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
@@ -188,7 +188,7 @@ public class Dml {
     @ShellMethod(value = "Singleton INSERT from CSV stream", key = {"singleton-insert", "si"})
     public void singletonInsert(@ShellOption(help = "table schema", defaultValue = "public",
                                         valueProvider = SchemaNameProvider.class) String schema,
-                                @ShellOption(help = "table name(s)", defaultValue = "customer",
+                                @ShellOption(help = "table name(s)",
                                         valueProvider = TableNameProvider.class) String table,
                                 @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
                                 @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,

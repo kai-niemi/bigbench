@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.validation.Valid;
@@ -58,6 +59,7 @@ public class Table {
         return Collections.unmodifiableList(columns);
     }
 
+    @JsonIgnore
     public List<String> getColumnNames() {
         return columns
                 .stream()
@@ -65,6 +67,7 @@ public class Table {
                 .toList();
     }
 
+    @JsonIgnore
     public String getColumnNamesAsString() {
         return String.join(",", getColumnNames());
     }

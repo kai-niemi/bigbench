@@ -84,7 +84,7 @@ Create an `IMPORT INTO` SQL file for each format with 10K rows:
 curl --output work/customer-csv.sql http://localhost:9090/public/customer/csv/import-into.sql?rows=10K
 curl --output work/customer-avro.sql http://localhost:9090/public/customer/avro/import-into.sql?rows=10K
 ```
-`
+
 Because the `IMPORT INTO` command take tables offline we can't use introspection to read the schema. Instead, 
 we preload the table schema on the server (in-memory):
 
@@ -101,9 +101,9 @@ curl -d "@work/customer-csv.json" -H "Content-Type:application/json" -X POST htt
 curl -d "@work/customer-avro.json" -H "Content-Type:application/json" -X POST http://localhost:9090/public/customer.avro/form
 ```
 
-Now were all set and can go ahead and start the imports:
+Now  go ahead and start the CSV import:
 
-```postgresql
+```shell
 cockroach sql --insecure --host=localhost --database bigbench < work/customer-csv.sql
 ```
 
@@ -117,7 +117,7 @@ Should output 60K rows:
 
 Repeat the same for avro:
 
-```postgresql
+```shell
 cockroach sql --insecure --host=localhost --database bigbench < work/customer-avro.sql
 ```
 
@@ -179,7 +179,7 @@ curl http://localhost:9090/public/customer.csv?rows=10K | cat work/header.csv - 
 Create a command file with the `array-insert` shell command and run:
 
 ```shell
-echo "array-insert" > cmd.txt
+echo "array-insert --table customer" > cmd.txt
 echo "quit" >> cmd.txt
 ./run.sh @cmd.txt
 ```
@@ -195,7 +195,7 @@ help array-insert
 Create a command file with the `batch-insert` shell command and run:
 
 ```shell
-echo "batch-insert" > cmd.txt
+echo "batch-insert --table customer" > cmd.txt
 echo "quit" >> cmd.txt
 ./run.sh @cmd.txt
 ```
@@ -211,7 +211,7 @@ help batch-insert
 Create a command file with the `singleton-insert` shell command and run:
 
 ```shell
-echo "singleton-insert" > cmd.txt
+echo "singleton-insert --table customer" > cmd.txt
 echo "quit" >> cmd.txt
 ./run.sh @cmd.txt
 ```

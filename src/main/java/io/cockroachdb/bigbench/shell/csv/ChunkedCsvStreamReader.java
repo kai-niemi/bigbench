@@ -35,7 +35,6 @@ public class ChunkedCsvStreamReader {
         this.delimiter = delimiter;
     }
 
-
     public void readInputStream(InputStream inputStream, ChunkProcessor<List<String>> chunkProcessor) {
         // Used bounded blocking queue to conserve memory
         final BlockingQueue<String> blockingQueue = new LinkedBlockingQueue<>(Math.max(QUEUE_SIZE, chunkSize));
@@ -64,20 +63,20 @@ public class ChunkedCsvStreamReader {
             AsciiArt.tock();
 
             logger.info("""
-                    Finished reading input stream (%s)
+                    Finished reading input stream
                     Produced chunks: %,d
                       Produced rows: %,d
                       Consumed rows: %,d
                            Duration: %s
-                           Rows/sec: %.1f/s""".formatted(
-                    // Adjust +1 for header
-                    rowsProduced != (rowsConsumed + 1) ? AsciiArt.flipTableRoughly() : AsciiArt.shrug(),
+                        Performance: %.1f rows/s
+                        %s""".formatted(
                     rowsProduced / chunkSize,
                     rowsProduced,
                     rowsConsumed,
                     duration,
-                    rowsConsumed / Math.max(1, duration.toSeconds() + 0f)
-            ));
+                    rowsConsumed / Math.max(1, (duration.toMillis() / 1000.0) % 60),
+                    rowsProduced != (rowsConsumed + 1) ? AsciiArt.flipTableRoughly() : AsciiArt.shrug())
+            );
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ProcessorException(e);
@@ -136,10 +135,12 @@ public class ChunkedCsvStreamReader {
                 if ((chunk.size() % batchSize) == 0) {
                     process(chunkProcessor, chunk, totalRows);
                     chunk.clear();
+                    AsciiArt.tick("Processing", totalRows.get());
                 }
             }
 
             process(chunkProcessor, chunk, totalRows);
+            AsciiArt.tick("Processing", totalRows.get());
             return totalRows.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -151,6 +152,5 @@ public class ChunkedCsvStreamReader {
                          AtomicInteger totalRows) {
         int rows = chunkProcessor.processChunk(chunk);
         totalRows.addAndGet(rows);
-        AsciiArt.tick("Processing", totalRows.get());
     }
 }

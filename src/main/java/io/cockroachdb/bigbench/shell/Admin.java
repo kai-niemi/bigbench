@@ -19,7 +19,7 @@ import org.springframework.shell.standard.ShellMethod;
 
 import io.cockroachdb.bigbench.shell.support.AnsiConsole;
 import io.cockroachdb.bigbench.shell.support.ListTableModel;
-import io.cockroachdb.bigbench.shell.support.TableUtils;
+import io.cockroachdb.bigbench.shell.support.TableRenderer;
 
 @ShellComponent
 @ShellCommandGroup(CommandGroups.ADMIN_COMMANDS)
@@ -30,6 +30,9 @@ public class Admin {
 
     @Autowired
     private AnsiConsole ansiConsole;
+
+    @Autowired
+    private TableRenderer tableRenderer;
 
     @ShellMethod(value = "Print local system information", key = {"system-info", "i"})
     public void systemInfo() {
@@ -71,6 +74,7 @@ public class Admin {
         ThreadPoolExecutor tpe = asyncTaskExecutor.getThreadPoolExecutor();
 
         List<List<?>> tuples = new ArrayList<>();
+        tuples.add(List.of("Property","Value"));
         tuples.add(List.of("running", asyncTaskExecutor.isRunning()));
         tuples.add(List.of("poolSize", tpe.getPoolSize()));
         tuples.add(List.of("maximumPoolSize", tpe.getMaximumPoolSize()));
@@ -80,10 +84,6 @@ public class Admin {
         tuples.add(List.of("taskCount", tpe.getTaskCount()));
         tuples.add(List.of("largestPoolSize", tpe.getLargestPoolSize()));
 
-        String table = TableUtils.prettyPrint(
-                new ListTableModel(tuples, List.of("Property", "Value"))
-        );
-
-        ansiConsole.cyan(table).nl();
+        tableRenderer.printTable(new ListTableModel(tuples));
     }
 }

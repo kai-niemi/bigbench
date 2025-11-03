@@ -46,13 +46,16 @@ spring:
     username: root
     password:
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 64
       minimum-idle: 0
       initialization-fail-timeout: -1
       connection-timeout: 5000
       pool-name: bigbench-pool
       auto-commit: true
       read-only: true
+      data-source-properties:
+        reWriteBatchedInserts: true
+        application_name: BigBench
   mvc:
     problemdetails:
       enabled: true

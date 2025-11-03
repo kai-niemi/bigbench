@@ -48,13 +48,14 @@ public abstract class MetaDataUtils {
     public static void listTables(DataSource dataSource, String schema, ResultSetHandler handler) {
         new JdbcTemplate(dataSource).execute((ConnectionCallback<Object>) connection -> {
             ResultSet columns = connection.getMetaData()
-                    .getTables(null, "*".equals(schema) ? null : schema, null, new String[]{"TABLE"});
+                    .getTables(null, "*".equals(schema) ? null : schema, null, new String[] {"TABLE"});
             handler.process(columns);
             return null;
         });
     }
 
-    public static void listPrimaryKeys(DataSource dataSource, String schema, String tableName, ResultSetHandler handler) {
+    public static void listPrimaryKeys(DataSource dataSource, String schema, String tableName,
+                                       ResultSetHandler handler) {
         new JdbcTemplate(dataSource).execute((ConnectionCallback<Object>) connection -> {
             ResultSet resultSet = connection.getMetaData().getPrimaryKeys(null, schema, stripQuotes(tableName));
             handler.process(resultSet);
@@ -62,7 +63,8 @@ public abstract class MetaDataUtils {
         });
     }
 
-    public static void listForeignKeys(DataSource dataSource, String schema, String tableName, ResultSetHandler handler) {
+    public static void listForeignKeys(DataSource dataSource, String schema, String tableName,
+                                       ResultSetHandler handler) {
         new JdbcTemplate(dataSource).execute((ConnectionCallback<Object>) connection -> {
             ResultSet resultSet = connection.getMetaData().getImportedKeys(null, schema, stripQuotes(tableName));
             handler.process(resultSet);
@@ -144,8 +146,9 @@ public abstract class MetaDataUtils {
     public static Set<String> selectEnumValues(DataSource dataSource, String tableName) {
         JdbcTemplate template = new JdbcTemplate(dataSource);
         try {
-            String values = template.queryForObject("select array_to_string(values,',') from [SHOW ENUMS] where name = '"
-                                                    + tableName + "'", String.class);
+            String values = template.queryForObject(
+                    "select array_to_string(values,',') from [SHOW ENUMS] where name = '"
+                    + tableName + "'", String.class);
             Set<String> quotedValues = new HashSet<>();
             StringUtils.commaDelimitedListToSet(values).forEach(s -> quotedValues.add("'" + s + "'"));
             return quotedValues;

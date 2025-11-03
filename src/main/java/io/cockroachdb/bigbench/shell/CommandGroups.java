@@ -7,7 +7,7 @@ public abstract class CommandGroups {
 
     public static final String EXPRESSION_COMMANDS = "(03) Expression Commands";
 
-    public static final String DATABASE_SCHEMA_COMMANDS = "(04) Database Schema Commands";
+    public static final String DATABASE_SCHEMA_COMMANDS = "(04) Database Commands";
 
     public static final String DML_COMMANDS = "(05) DML Commands";
 

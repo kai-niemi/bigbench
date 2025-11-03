@@ -66,7 +66,7 @@ public abstract class SchemaExporter {
             DataSource dataSource, List<TableModel> tableModels) {
         // First pass, resolve table columns
         tableModels.forEach(tableModel -> {
-            logger.info("Introspect: %s.%s".formatted(tableModel.getSchema(), tableModel.getName()));
+            logger.debug("Introspect: %s.%s".formatted(tableModel.getSchema(), tableModel.getName()));
 
             MetaDataUtils.listColumns(dataSource, tableModel).forEach(columnModel -> {
                 configureColumn(dataSource, columnModel);
@@ -79,7 +79,7 @@ public abstract class SchemaExporter {
 
         // Build DAG from fk relations
         tableModels.forEach(tableModel -> {
-            logger.info("Resolving: %s.%s".formatted(tableModel.getSchema(), tableModel.getName()));
+            logger.debug("Resolving: %s.%s".formatted(tableModel.getSchema(), tableModel.getName()));
 
             MetaDataUtils.listForeignKeys(dataSource, tableModel.getSchema(), tableModel.getName(),
                     rs -> {

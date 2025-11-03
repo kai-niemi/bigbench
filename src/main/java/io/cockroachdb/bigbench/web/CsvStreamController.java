@@ -1,9 +1,9 @@
 package io.cockroachdb.bigbench.web;
 
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -15,7 +15,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,8 +54,8 @@ public class CsvStreamController extends AbstractStreamController {
             @RequestParam(required = false, name = "quoteCharacter", defaultValue = "") String quoteCharacter,
             @RequestParam(required = false, name = "header", defaultValue = "true") String header,
             @RequestParam(required = false, name = "rows", defaultValue = "100") String rows,
-//            @RequestParam(required = false) MultiValueMap<String, String> _valueMap,
-            @RequestHeader(value = HttpHeaders.ACCEPT_ENCODING, required = false, defaultValue = "") String acceptEncoding) {
+            @RequestHeader(value = HttpHeaders.ACCEPT_ENCODING, required = false, defaultValue = "")
+            String acceptEncoding) {
         logger.debug("""
                 >> streamTableInCSVFormat:
                     schema = %s
@@ -67,8 +66,6 @@ public class CsvStreamController extends AbstractStreamController {
                     rows = %s
                     acceptEncoding = %s"""
                 .formatted(schema, name, delimiter, quoteCharacter, header, rows, acceptEncoding));
-
-//        final Map<String, String> allParams = Objects.requireNonNull(valueMap, "params required").toSingleValueMap();
 
         Table table = lookupTable(QualifiedName.of(schema, name));
         table.setRows(rows);
@@ -87,8 +84,8 @@ public class CsvStreamController extends AbstractStreamController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream -> new CsvStreamGenerator(dataSource, table, gzip)
-                        .setDelimiter(delimiter)
-                        .setQuoteCharacter(quoteCharacter)
+                        .setDelimiter(URLDecoder.decode(delimiter, Charset.defaultCharset()))
+                        .setQuoteCharacter(URLDecoder.decode(quoteCharacter, Charset.defaultCharset()))
                         .setIncludeHeader(Boolean.parseBoolean(header))
                         .streamTo(outputStream));
     }
@@ -97,15 +94,13 @@ public class CsvStreamController extends AbstractStreamController {
     public ResponseEntity<EntityModel<Table>> getTableForm(
             @PathVariable(name = "schema") String schema,
             @PathVariable(name = "name") String name,
-            @RequestParam(required = false) MultiValueMap<String, String> valueMap) {
-        final Map<String, String> allParams = Objects.requireNonNull(valueMap, "params required").toSingleValueMap();
-
+            @RequestParam(required = false, name = "rows", defaultValue = "100") String rows) {
         Table table = lookupTable(QualifiedName.of(schema, name));
-        table.setRows(allParams.getOrDefault("rows", "10"));
+        table.setRows(rows);
 
         return ResponseEntity.ok(EntityModel.of(table)
                 .add(linkTo(methodOn(getClass())
-                        .getTableForm(schema, name, valueMap))
+                        .getTableForm(schema, name, rows))
                         .withSelfRel()
                         .andAffordance(afford(methodOn(getClass())
                                 .submitForm(schema, name, null)))));
@@ -128,18 +123,22 @@ public class CsvStreamController extends AbstractStreamController {
     public ResponseEntity<String> getImportInto(
             @PathVariable(name = "schema") String schema,
             @PathVariable(name = "name") String name,
-            @RequestParam(required = false) MultiValueMap<String, String> valueMap) {
-        final Map<String, String> allParams = Objects.nonNull(valueMap) ? valueMap.toSingleValueMap() : Map.of();
-
+            @RequestParam(required = false, name = "delimiter", defaultValue = ",") String delimiter,
+            @RequestParam(required = false, name = "quoteCharacter", defaultValue = "") String quoteCharacter,
+            @RequestParam(required = false, name = "header", defaultValue = "true") String header,
+            @RequestParam(required = false, name = "rows", defaultValue = "100") String rows,
+            @RequestParam(required = false, name = "nodes", defaultValue = "6") Integer nodes
+    ) {
         Table table = lookupTable(QualifiedName.of(schema, name));
 
         final String uri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .pathSegment(schema, name + ".csv")
-                .queryParams(valueMap)
+                .queryParam("delimiter", URLDecoder.decode(delimiter, Charset.defaultCharset()))
+                .queryParam("quoteCharacter", URLDecoder.decode(quoteCharacter, Charset.defaultCharset()))
+                .queryParam("header", header)
+                .queryParam("rows", rows)
                 .buildAndExpand()
                 .toUriString();
-
-        int nodes = Integer.parseInt(allParams.getOrDefault("nodes", "6"));
 
         List<String> paths = IntStream.rangeClosed(1, nodes)
                 .mapToObj(value -> uri)

@@ -1,20 +1,27 @@
 package io.cockroachdb.bigbench.shell;
 
+import java.lang.reflect.InvocationTargetException;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.DatabasePopulatorUtils;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -27,7 +34,7 @@ import io.cockroachdb.bigbench.shell.support.AnotherFileValueProvider;
 import io.cockroachdb.bigbench.shell.support.AnsiConsole;
 import io.cockroachdb.bigbench.shell.support.ListTableModel;
 import io.cockroachdb.bigbench.shell.support.TableNameProvider;
-import io.cockroachdb.bigbench.shell.support.TableUtils;
+import io.cockroachdb.bigbench.shell.support.TableRenderer;
 import io.cockroachdb.bigbench.util.graph.DirectedAcyclicGraph;
 
 @ShellComponent
@@ -39,8 +46,50 @@ public class Database {
     @Autowired
     private AnsiConsole ansiConsole;
 
-    @ShellMethod(value = "Execute SQL file", key = {"exec-file", "ef"})
-    public void createSchema(@ShellOption(help = "path to DDL/DML file",
+    @Autowired
+    private TableRenderer tableRenderer;
+
+    @ShellMethod(value = "Print database metadata", key = {"metadata", "m"})
+    public void metadata(
+            @ShellOption(help = "Include all no-arg database metadata methods", defaultValue = "false") boolean all) {
+        JdbcTemplate template = new JdbcTemplate(dataSource);
+        template.execute((ConnectionCallback<Object>) connection -> {
+            DatabaseMetaData metaData = connection.getMetaData();
+
+            Map<String, Object> properties = new TreeMap<>();
+            if (all) {
+                ReflectionUtils.doWithMethods(java.sql.DatabaseMetaData.class, method -> {
+                    if (method.getParameterCount() == 0) {
+                        try {
+                            Object rv = method.invoke(metaData);
+                            properties.put(method.getName(), rv);
+                        } catch (InvocationTargetException e) {
+                            properties.put(method.getName(), e.getTargetException().getMessage());
+                        }
+                    }
+                });
+            } else {
+                properties.put("databaseProductName", metaData.getDatabaseProductName());
+                properties.put("databaseMajorVersion", metaData.getDatabaseMajorVersion());
+                properties.put("databaseMinorVersion", metaData.getDatabaseMinorVersion());
+                properties.put("databaseProductVersion", metaData.getDatabaseProductVersion());
+                properties.put("driverMajorVersion", metaData.getDriverMajorVersion());
+                properties.put("driverMinorVersion", metaData.getDriverMinorVersion());
+                properties.put("driverName", metaData.getDriverName());
+                properties.put("driverVersion", metaData.getDriverVersion());
+                properties.put("maxConnections", metaData.getMaxConnections());
+                properties.put("defaultTransactionIsolation", metaData.getDefaultTransactionIsolation());
+                properties.put("transactionIsolation", connection.getTransactionIsolation());
+            }
+
+            properties.forEach((k, v) -> ansiConsole.yellow("%s = ", k).cyan("%s", v).nl());
+
+            return null;
+        });
+    }
+
+    @ShellMethod(value = "Execute SQL script", key = {"exec-file", "ef"})
+    public void executeScript(@ShellOption(help = "path to DDL/DML file",
             valueProvider = AnotherFileValueProvider.class) String path) {
 
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
@@ -52,12 +101,13 @@ public class Database {
         DatabasePopulatorUtils.execute(populator, dataSource);
     }
 
-    @ShellMethod(value = "Print connection pool stats", key = {"pool-stats", "ps"})
+    @ShellMethod(value = "Print connection pool statistics", key = {"pool-stats", "ps"})
     public void connectionPoolStats() {
         try {
             HikariDataSource hikariDataSource = dataSource.unwrap(HikariDataSource.class);
 
             List<List<?>> tuples = new ArrayList<>();
+            tuples.add(List.of("Key", "Value"));
             tuples.add(List.of("name", hikariDataSource.getPoolName()));
             tuples.add(List.of("maximumPoolSize", hikariDataSource.getMaximumPoolSize()));
             tuples.add(List.of("minimumIdle", hikariDataSource.getMinimumIdle()));
@@ -65,23 +115,28 @@ public class Database {
             tuples.add(List.of("loginTimeout", hikariDataSource.getLoginTimeout()));
             tuples.add(List.of("maxLifetime", hikariDataSource.getMaxLifetime()));
             tuples.add(List.of("validationTimeout", hikariDataSource.getValidationTimeout()));
+            tuples.add(List.of("lLeakDetectionThreshold", hikariDataSource.getLeakDetectionThreshold()));
+            tuples.add(List.of("autoCommit", hikariDataSource.isAutoCommit()));
+            tuples.add(List.of("allowPoolSuspension", hikariDataSource.isAllowPoolSuspension()));
+            tuples.add(List.of("readOnly", hikariDataSource.isReadOnly()));
+            tuples.add(List.of("running", hikariDataSource.isRunning()));
+            tuples.add(List.of("properties", hikariDataSource.getDataSourceProperties()));
 
             ansiConsole.yellow("Configuration:").nl();
-            ansiConsole.cyan(TableUtils.prettyPrint(
-                    new ListTableModel(tuples, List.of("Property", "Value"))
+            ansiConsole.cyan(tableRenderer.renderTable(new ListTableModel(tuples)
             )).nl();
 
             HikariPoolMXBean hikariPool = hikariDataSource.getHikariPoolMXBean();
 
             tuples.clear();
+            tuples.add(List.of("Key", "Value"));
             tuples.add(List.of("activeConnections", hikariPool.getActiveConnections()));
             tuples.add(List.of("idleConnections", hikariPool.getIdleConnections()));
             tuples.add(List.of("threadsAwaitingConnection", hikariPool.getThreadsAwaitingConnection()));
             tuples.add(List.of("totalConnections", hikariPool.getTotalConnections()));
 
             ansiConsole.yellow("Metrics:").nl();
-            ansiConsole.cyan(TableUtils.prettyPrint(
-                    new ListTableModel(tuples, List.of("Property", "Value"))
+            ansiConsole.cyan(tableRenderer.renderTable(new ListTableModel(tuples)
             )).nl();
 
         } catch (SQLException e) {
@@ -96,21 +151,10 @@ public class Database {
 
     @ShellMethod(value = "List tables", key = {"tables", "t"})
     public void listTables(
-            @ShellOption(help = "table schema", defaultValue = "public") String schema,
-            @ShellOption(help = "table name(s)", defaultValue = "*",
-                    valueProvider = TableNameProvider.class) String tableNames) {
-        Set<String> names = StringUtils.commaDelimitedListToSet(tableNames.toLowerCase());
-
+            @ShellOption(help = "table schema", defaultValue = "public") String schema) {
         MetaDataUtils.listTables(dataSource, schema, resultSet -> {
             try {
-                ansiConsole.cyan(TableUtils.prettyPrint(resultSet, rs -> {
-                    try {
-                        return names.contains("*")
-                               || names.contains(rs.getString("TABLE_NAME").toLowerCase());
-                    } catch (SQLException e) {
-                        return false;
-                    }
-                }));
+                ansiConsole.cyan(tableRenderer.renderTable(resultSet, List.of()));
             } catch (SQLException e) {
                 throw new CommandException(e);
             }
@@ -122,17 +166,23 @@ public class Database {
             @ShellOption(help = "table schema", defaultValue = "public") String schema,
             @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
             String tableName) {
-        MetaDataUtils.findTables(dataSource, schema, model -> model.getName().equalsIgnoreCase(tableName))
-                .forEach(tableModel -> {
-                    ansiConsole.magenta("%s:", tableModel).nl();
 
-                    MetaDataUtils.listColumns(dataSource, tableModel.getSchema(), tableModel.getName(), resultSet -> {
-                        try {
-                            ansiConsole.cyan(TableUtils.prettyPrint(resultSet)).nl();
-                        } catch (SQLException e) {
-                            throw new CommandException(e);
-                        }
-                    });
+        MetaDataUtils.findTables(dataSource, schema,
+                        model -> "*".equals(tableName) || model.getName().equalsIgnoreCase(tableName))
+                .forEach(tableModel -> {
+                    ansiConsole.yellow("Table '%s':", tableModel.getName()).nl();
+
+                    MetaDataUtils.listColumns(dataSource, tableModel.getSchema(), tableModel.getName(),
+                            resultSet -> {
+                                try {
+                                    ansiConsole.cyan(tableRenderer.renderTable(resultSet,
+                                            List.of("COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE",
+                                                    "DECIMAL_DIGITS", "NULLABLE", "REMARKS", "COLUMN_DEF",
+                                                    "IS_AUTOINCREMENT", "IS_GENERATEDCOLUMN"))).nl();
+                                } catch (SQLException e) {
+                                    throw new CommandException(e);
+                                }
+                            });
                 });
     }
 
@@ -141,10 +191,20 @@ public class Database {
             @ShellOption(help = "table schema", defaultValue = "public") String schema,
             @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
             String tableName) {
-        MetaDataUtils.findTables(dataSource, schema, model -> model.getName().equalsIgnoreCase(tableName))
-                .forEach(model -> {
-                    ansiConsole.cyan(MetaDataUtils.showCreateTable(dataSource, model.getName())).nl().nl();
+        List<List<?>> tuples = new ArrayList<>();
+        tuples.add(List.of("Key", "Value"));
+
+        MetaDataUtils.findTables(dataSource, schema,
+                        model -> "*".equals(tableName) || model.getName().equalsIgnoreCase(tableName))
+                .forEach(tableModel -> {
+                    tuples.add(List.of(tableModel.getName(),
+                            MetaDataUtils.showCreateTable(dataSource, tableModel.getName())));
+
                 });
+
+        ansiConsole.yellow("Tables:").nl();
+        ansiConsole.cyan(tableRenderer.renderTable(new ListTableModel(tuples)
+        )).nl();
     }
 
     @ShellMethod(value = "List foreign keys", key = {"foreign-keys", "fk"})
@@ -156,10 +216,12 @@ public class Database {
                         tableName.equals("*") ||
                         model.getName().equalsIgnoreCase(tableName))
                 .forEach(tableModel -> {
+                    ansiConsole.yellow("Table '%s':", tableModel.getName()).nl();
+
                     MetaDataUtils.listForeignKeys(dataSource, tableModel.getSchema(), tableModel.getName(),
                             resultSet -> {
                                 try {
-                                    ansiConsole.cyan(TableUtils.prettyPrint(resultSet)).nl();
+                                    ansiConsole.cyan(tableRenderer.renderTable(resultSet, List.of())).nl();
                                 } catch (SQLException e) {
                                     throw new CommandException(e);
                                 }
@@ -176,10 +238,12 @@ public class Database {
                         tableName.equals("*") ||
                         model.getName().equalsIgnoreCase(tableName))
                 .forEach(tableModel -> {
+                    ansiConsole.yellow("Table '%s':", tableModel.getName()).nl();
+
                     MetaDataUtils.listPrimaryKeys(dataSource, tableModel.getSchema(), tableModel.getName(),
                             resultSet -> {
                                 try {
-                                    ansiConsole.cyan(TableUtils.prettyPrint(resultSet));
+                                    ansiConsole.cyan(tableRenderer.renderTable(resultSet, List.of()));
                                 } catch (SQLException e) {
                                     throw new CommandException(e);
                                 }
@@ -187,7 +251,7 @@ public class Database {
                 });
     }
 
-    @ShellMethod(value = "Print table topology", key = {"topology", "tt"})
+    @ShellMethod(value = "Print table topology", key = {"topology", "top"})
     public void listTopology(@ShellOption(help = "table schema", defaultValue = "public") String schema,
                              @ShellOption(help = "table name", defaultValue = "*", valueProvider = TableNameProvider.class)
                              String tableNames) {

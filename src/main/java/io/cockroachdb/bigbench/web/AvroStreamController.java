@@ -2,8 +2,6 @@ package io.cockroachdb.bigbench.web;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -15,7 +13,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,16 +48,19 @@ public class AvroStreamController extends AbstractStreamController {
     public ResponseEntity<StreamingResponseBody> streamTableInAvroFormat(
             @PathVariable(name = "schema") String schema,
             @PathVariable(name = "name") String name,
-            @RequestParam(required = false) MultiValueMap<String, String> valueMap,
+            @RequestParam(required = false, name = "rows", defaultValue = "100") String rows,
             @RequestHeader(value = HttpHeaders.ACCEPT_ENCODING, required = false, defaultValue = "")
             String acceptEncoding) {
-        logger.debug(">> streamTableInAvroFormat: schema=%s, name=%s, params=%s, acceptEncoding=%s"
-                .formatted(schema, name, valueMap, acceptEncoding));
-
-        final Map<String, String> allParams = Objects.requireNonNull(valueMap, "params required").toSingleValueMap();
+        logger.debug("""
+                >> streamTableInAvroFormat:
+                    schema = %s
+                    name = %s
+                    rows = %s
+                    acceptEncoding = %s"""
+                .formatted(schema, name, rows, acceptEncoding));
 
         Table table = lookupTable(QualifiedName.of(schema, name));
-        table.setRows(allParams.getOrDefault("rows", "10"));
+        table.setRows(rows);
 
         final boolean gzip = acceptEncoding.contains("gzip");
 
@@ -73,9 +73,6 @@ public class AvroStreamController extends AbstractStreamController {
             headers.set(HttpHeaders.CONTENT_ENCODING, "gzip");
         }
 
-        logger.debug("<< streamTableInAvroFormat: schema=%s, name=%s, params=%s, acceptEncoding=%s"
-                .formatted(schema, name, valueMap, acceptEncoding));
-
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream ->
@@ -86,15 +83,14 @@ public class AvroStreamController extends AbstractStreamController {
     public ResponseEntity<EntityModel<Table>> getTableForm(
             @PathVariable(name = "schema") String schema,
             @PathVariable(name = "name") String name,
-            @RequestParam(required = false) MultiValueMap<String, String> valueMap) {
-        final Map<String, String> allParams = Objects.requireNonNull(valueMap, "params required").toSingleValueMap();
-
+            @RequestParam(required = false, name = "rows", defaultValue = "100") String rows
+    ) {
         Table table = lookupTable(QualifiedName.of(schema, name));
-        table.setRows(allParams.getOrDefault("rows", "10"));
+        table.setRows(rows);
 
         return ResponseEntity.ok(EntityModel.of(table)
                 .add(linkTo(methodOn(getClass())
-                        .getTableForm(schema, name, valueMap))
+                        .getTableForm(schema, name, rows))
                         .withSelfRel()
                         .andAffordance(afford(methodOn(getClass())
                                 .submitForm(schema, name, null)))));
@@ -117,18 +113,15 @@ public class AvroStreamController extends AbstractStreamController {
     public ResponseEntity<String> getImportInto(
             @PathVariable(name = "schema") String schema,
             @PathVariable(name = "name") String name,
-            @RequestParam(required = false) MultiValueMap<String, String> valueMap) {
-        final Map<String, String> allParams = Objects.nonNull(valueMap) ? valueMap.toSingleValueMap() : Map.of();
-
+            @RequestParam(required = false, name = "rows", defaultValue = "100") String rows,
+            @RequestParam(required = false, name = "nodes", defaultValue = "6") Integer nodes) {
         Table table = lookupTable(QualifiedName.of(schema, name));
 
         final String uri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .pathSegment(schema, name + ".avro")
-                .queryParams(valueMap)
+                .queryParam("rows", rows)
                 .buildAndExpand()
                 .toUriString();
-
-        int nodes = Integer.parseInt(allParams.getOrDefault("nodes", "6"));
 
         List<String> paths = IntStream.rangeClosed(1, nodes)
                 .mapToObj(value -> uri)

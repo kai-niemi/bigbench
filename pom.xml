@@ -287,18 +287,9 @@
                             <failOnError>false</failOnError>
                             <filesets>
                                 <fileset>
-                                    <directory>${basedir}/.output</directory>
+                                    <directory>${basedir}/work</directory>
                                     <includes>
                                         <include>**/*</include>
-                                    </includes>
-                                </fileset>
-                                <fileset>
-                                    <directory>${basedir}</directory>
-                                    <includes>
-                                        <include>*.log</include>
-                                        <include>*.gz</include>
-                                        <include>*.tmp</include>
-                                        <include>*.history</include>
                                     </includes>
                                 </fileset>
                             </filesets>

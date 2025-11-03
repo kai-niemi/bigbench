@@ -1,4 +1,4 @@
-create table attachment
+create table if not exists attachment
 (
     id           int8        not null default unordered_unique_rowid(),
     binary_file  bytea,
@@ -11,7 +11,7 @@ create table attachment
     primary key (id)
 );
 
-create table categorized_product
+create table if not exists categorized_product
 (
     category_id  int8      not null,
     created_time timestamp not null,
@@ -20,7 +20,7 @@ create table categorized_product
     username     varchar(16)
 );
 
-create table category
+create table if not exists category
 (
     category_type varchar(15) not null,
     id            int8        not null default unordered_unique_rowid(),
@@ -34,7 +34,7 @@ create table category
     primary key (id)
 );
 
-create table customer
+create table if not exists customer
 (
     id                int8         not null default unordered_unique_rowid(),
     address1          varchar(255),
@@ -55,14 +55,14 @@ create table customer
     primary key (id)
 );
 
-create table customer_payment_method
+create table if not exists customer_payment_method
 (
     user_id           int8 not null,
     payment_method_id int8 not null,
     primary key (user_id, payment_method_id)
 );
 
-create table orders
+create table if not exists orders
 (
     id                  int8      not null default unordered_unique_rowid(),
     bill_address1       varchar(255),
@@ -91,7 +91,7 @@ create table orders
     primary key (id)
 );
 
-create table order_item
+create table if not exists order_item
 (
     order_id             int8        not null,
     load_type            varchar(16) not null,
@@ -105,7 +105,7 @@ create table order_item
     primary key (order_id, item_pos)
 );
 
-create table payment_method
+create table if not exists payment_method
 (
     payment_type   varchar(15) not null,
     id             int8        not null default unordered_unique_rowid(),
@@ -123,7 +123,7 @@ create table payment_method
     primary key (id)
 );
 
-create table product
+create table if not exists product
 (
     id                 int8         not null default unordered_unique_rowid(),
     created_by         varchar(24),
@@ -138,19 +138,19 @@ create table product
     primary key (id)
 );
 
-create table product_attachment
+create table if not exists product_attachment
 (
     product_id    int8 not null,
     attachment_id int8 not null
 );
 
-create table product_tag
+create table if not exists product_tag
 (
     product_id int8        not null,
     name       varchar(64) not null
 );
 
-create table product_variation
+create table if not exists product_variation
 (
     id         int8        not null default unordered_unique_rowid(),
     amount     numeric(19, 2),
@@ -161,7 +161,7 @@ create table product_variation
     primary key (id)
 );
 
-create table product_variation_attribute
+create table if not exists product_variation_attribute
 (
     product_variation_id int8         not null,
     value                varchar(512) not null,
@@ -169,20 +169,20 @@ create table product_variation_attribute
     primary key (product_variation_id, name)
 );
 
-alter table if exists category
-    add constraint UKasmlej12cqrmj90f817rkuyw unique (name, parent_id);
+-- alter table if exists category
+--     add constraint UKasmlej12cqrmj90f817rkuyw unique (name, parent_id);
 
-alter table if exists customer
-    add constraint UK_8cqc86mekfecc5kjcwakm36nd unique (user_name);
+-- alter table if exists customer
+--     add constraint UK_8cqc86mekfecc5kjcwakm36nd unique (user_name);
 
-alter table if exists customer_payment_method
-    add constraint UK_jsrefpdc7hkdod3gio6llqmuy unique (payment_method_id);
+-- alter table if exists customer_payment_method
+--     add constraint UK_jsrefpdc7hkdod3gio6llqmuy unique (payment_method_id);
 
-alter table if exists product
-    add constraint UK_gcnmh8ufsexajerget2c6p5mq unique (sku_code);
+-- alter table if exists product
+--     add constraint UK_gcnmh8ufsexajerget2c6p5mq unique (sku_code);
 
-alter table if exists product_variation
-    add constraint UK_5okunt0ypvn3164u9oufio2bl unique (sku_code);
+-- alter table if exists product_variation
+--     add constraint UK_5okunt0ypvn3164u9oufio2bl unique (sku_code);
 
 alter table if exists categorized_product
     add constraint FKqcdnn05nhqnlxsu5lm1dp1kl3

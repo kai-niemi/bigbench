@@ -53,7 +53,7 @@ public class Expressions {
         }
     }
 
-    @ShellMethod(value = "List expression functions and variables", key = {"functions", "f"})
+    @ShellMethod(value = "List functions and variables", key = {"functions", "f"})
     public void listFunctions() {
         final ExpressionRegistry registry = ExpressionRegistryBuilder.build(dataSource);
 

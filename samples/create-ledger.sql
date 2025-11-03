@@ -4,7 +4,7 @@ create type account_type as enum ('A', 'L', 'E', 'R', 'C');
 drop type if exists transaction_type;
 create type transaction_type as enum ('GEN','TMP','PAY');
 
-create table account
+create table if not exists account
 (
     id             uuid           not null default gen_random_uuid(),
     city           string         not null,
@@ -23,7 +23,7 @@ create table account
 
 create index on account (city) storing (balance, currency);
 
-create table transaction
+create table if not exists transaction
 (
     id               uuid             not null default gen_random_uuid(),
     city             string           not null,
@@ -34,7 +34,7 @@ create table transaction
     primary key (id)
 );
 
-create table transaction_item
+create table if not exists transaction_item
 (
     transaction_id        uuid           not null,
     account_id            uuid           not null,
@@ -49,7 +49,7 @@ create table transaction_item
     primary key (transaction_id, account_id)
 );
 
-create table outbox
+create table if not exists outbox
 (
     id             uuid        not null default gen_random_uuid(),
     created_at     timestamptz not null default clock_timestamp(),

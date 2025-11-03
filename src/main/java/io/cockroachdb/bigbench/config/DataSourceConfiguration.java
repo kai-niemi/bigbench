@@ -36,10 +36,17 @@ public class DataSourceConfiguration {
     @Lazy
     public DataSource primaryDataSource() {
         LazyConnectionDataSourceProxy proxy = new LazyConnectionDataSourceProxy();
-        proxy.setDefaultAutoCommit(true);
-        proxy.setDefaultTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
         proxy.setTargetDataSource(loggingProxy(targetDataSource()));
         return proxy;
+    }
+
+    @Bean
+    @ConfigurationProperties("spring.datasource.hikari")
+    public HikariDataSource targetDataSource() {
+        return dataSourceProperties()
+                .initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
     }
 
     private DataSource loggingProxy(DataSource dataSource) {
@@ -67,18 +74,5 @@ public class DataSourceConfiguration {
                 .asJson()
                 .listener(listener)
                 .build();
-    }
-
-    @Bean
-    @ConfigurationProperties("spring.datasource.hikari")
-    public HikariDataSource targetDataSource() {
-        HikariDataSource ds = dataSourceProperties()
-                .initializeDataSourceBuilder()
-                .type(HikariDataSource.class)
-                .build();
-        ds.setAutoCommit(true);
-        ds.addDataSourceProperty("ApplicationName", "bigbench");
-        ds.addDataSourceProperty("reWriteBatchedInserts", "true");
-        return ds;
     }
 }

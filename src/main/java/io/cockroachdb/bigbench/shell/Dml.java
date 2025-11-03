@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ansi.AnsiColor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.NonTransientDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
@@ -38,9 +39,12 @@ import io.cockroachdb.bigbench.shell.csv.ChunkedCsvStreamReader;
 import io.cockroachdb.bigbench.shell.csv.ErrorHandler;
 import io.cockroachdb.bigbench.shell.csv.ErrorStrategy;
 import io.cockroachdb.bigbench.shell.csv.ProcessorException;
+import io.cockroachdb.bigbench.shell.support.AnsiConsole;
 import io.cockroachdb.bigbench.shell.support.HypermediaClient;
+import io.cockroachdb.bigbench.shell.support.ListTableModel;
 import io.cockroachdb.bigbench.shell.support.SchemaNameProvider;
 import io.cockroachdb.bigbench.shell.support.TableNameProvider;
+import io.cockroachdb.bigbench.shell.support.TableRenderer;
 import io.cockroachdb.bigbench.util.Multiplier;
 import io.cockroachdb.bigbench.web.LinkRelations;
 import io.cockroachdb.bigbench.web.NotFoundException;
@@ -63,23 +67,64 @@ public class Dml {
     @Autowired
     private DataSource dataSource;
 
-    @ShellMethod(value = "Set SQL error handling strategy", key = {"error-strategy", "es"})
-    public void toggleErrorStrategy(@ShellOption(help = "transient errors",
-                                            valueProvider = EnumValueProvider.class) ErrorStrategy transientErrorStrategy,
-                                    @ShellOption(help = "non-transient errors",
-                                            valueProvider = EnumValueProvider.class) ErrorStrategy nonTransientErrorStrategy) {
-        Dml.transientErrorStrategy = transientErrorStrategy;
-        Dml.nonTransientErrorStrategy = nonTransientErrorStrategy;
-        logger.info("Using transient strategy: " + transientErrorStrategy);
-        logger.info("Using non-transient strategy: " + nonTransientErrorStrategy);
+    @Autowired
+    private AnsiConsole ansiConsole;
+
+    @Autowired
+    private TableRenderer tableRenderer;
+
+    @ShellMethod(value = "Download and print CSV stream", key = {"download-csv", "dc"})
+    public void downloadCSV(@ShellOption(help = "table schema", defaultValue = "public",
+                                    valueProvider = SchemaNameProvider.class) String schema,
+                            @ShellOption(help = "table name(s)", defaultValue = "product",
+                                    valueProvider = TableNameProvider.class) String table,
+                            @ShellOption(help = "number of rows to retrieve", defaultValue = "32") String rows,
+                            @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
+                            @ShellOption(help = "CSV column delimiter", defaultValue = ";") String delimiter,
+                            @ShellOption(help = "API root endpoint", defaultValue = "http://localhost:9090/")
+                            String endpoint
+    ) {
+        int rowNum = Multiplier.parseInt(rows);
+
+        Link streamingLink = hypermediaClient.from(Link.of(endpoint))
+                .follow(rel(curied(CURIE_NAMESPACE, LinkRelations.TABLE_REL).value())
+                        .withParameter("schema", schema)
+                        .withParameter("table", table))
+                .follow(rel(curied(CURIE_NAMESPACE, LinkRelations.CSV_STREAM_REL).value())
+                        .withParameter("rows", rowNum)
+                        .withParameter("delimiter", delimiter)
+                )
+                .asTemplatedLink();
+
+        hypermediaClient.get(streamingLink, httpResponse -> {
+            List<List<?>> tuples = new ArrayList<>();
+
+            new ChunkedCsvStreamReader(batchSize, delimiter)
+                    .readInputStream(httpResponse.getBody(), new ChunkProcessor<>() {
+                        @Override
+                        public void processHeader(List<String> columns) throws ProcessorException {
+                            tuples.add(columns);
+                        }
+
+                        @Override
+                        public int processChunk(Chunk<? extends List<String>> chunk) throws ProcessorException {
+                            chunk.forEach(tuples::add);
+                            return chunk.size();
+                        }
+                    });
+
+            ansiConsole.print(AnsiColor.CYAN, tableRenderer.renderTable(new ListTableModel(tuples))).nl();
+
+            return null;
+        });
     }
 
     @ShellMethod(value = "Batch INSERT from CSV stream", key = {"batch-insert", "bi"})
     public void batchInsert(@ShellOption(help = "table schema", defaultValue = "public",
                                     valueProvider = SchemaNameProvider.class) String schema,
-                            @ShellOption(help = "table name(s)", defaultValue = "customer",
+                            @ShellOption(help = "table name(s)", defaultValue = "product",
                                     valueProvider = TableNameProvider.class) String table,
-                            @ShellOption(help = "number of rows to retrieve", defaultValue = "1k") String rows,
+                            @ShellOption(help = "number of rows to retrieve", defaultValue = "32") String rows,
                             @ShellOption(help = "batch/chunk size", defaultValue = "16") int batchSize,
                             @ShellOption(help = "CSV column delimiter", defaultValue = ",") String delimiter,
                             @ShellOption(help = "add 'ON CONFLICT DO NOTHING' clause", defaultValue = "false")
@@ -95,7 +140,9 @@ public class Dml {
                         .withParameter("schema", schema)
                         .withParameter("table", table))
                 .follow(rel(curied(CURIE_NAMESPACE, LinkRelations.CSV_STREAM_REL).value())
-                        .withParameter("rows", rowNum))
+                        .withParameter("rows", rowNum)
+                        .withParameter("delimiter", delimiter)
+                )
                 .asTemplatedLink();
 
         hypermediaClient.get(streamingLink, httpResponse -> {
@@ -170,6 +217,22 @@ public class Dml {
             return null;
         });
     }
+
+    @ShellMethod(value = "Set SQL error handling strategy", key = {"error-strategy", "es"})
+    public void toggleErrorStrategy(@ShellOption(help = "transient errors",
+                                            valueProvider = EnumValueProvider.class) ErrorStrategy transientErrorStrategy,
+                                    @ShellOption(help = "non-transient errors",
+                                            valueProvider = EnumValueProvider.class)
+                                    ErrorStrategy nonTransientErrorStrategy) {
+        Dml.transientErrorStrategy = transientErrorStrategy;
+        Dml.nonTransientErrorStrategy = nonTransientErrorStrategy;
+        logger.info("Using transient strategy: " + transientErrorStrategy);
+        logger.info("Using non-transient strategy: " + nonTransientErrorStrategy);
+    }
+
+    /// ////////////////////////////////
+    /// ////////////////////////////////
+    /// ////////////////////////////////
 
     private static abstract class AbstractInsertChunkProcessor implements ChunkProcessor<List<String>> {
         private final boolean onConflictDoNothing;
@@ -267,11 +330,12 @@ public class Dml {
                 }
             });
 
+            // reWriteBatchedInserts=true will hose rows affected
             long success = Arrays.stream(rv)
-                    .filter(value -> value != Statement.EXECUTE_FAILED)
+                    .filter(value -> value != Statement.EXECUTE_FAILED && value != Statement.SUCCESS_NO_INFO)
                     .sum();
 
-            rows.addAndGet((int) success);
+            rows.addAndGet(success > 0 ? (int) success : chunk.size());
         }
     }
 

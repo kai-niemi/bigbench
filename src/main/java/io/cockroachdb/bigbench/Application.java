@@ -38,6 +38,8 @@ public class Application implements PromptProvider {
         System.out.println("Options:");
         System.out.println("--help                    this help");
         System.out.println("--profiles [profile,..]   spring profiles to activate");
+        System.out.println("--noshell                 disable interactive shell");
+        System.out.println("--norewrite               disable pgJDBC INSERT rewrites (reWriteBatchedInserts=false)");
         System.out.println();
         System.out.println("All other options are passed to the shell.");
         System.out.println();
@@ -58,6 +60,8 @@ public class Application implements PromptProvider {
                 printHelpAndExit("");
             } else if (arg.equals("--noshell")) {
                 System.setProperty("spring.shell.interactive.enabled", "false");
+            } else if (arg.equals("--norewrite")) {
+                System.setProperty("spring.datasource.hikari.data-source-properties.reWriteBatchedInserts", "false");
             } else if (arg.equals("--profiles")) {
                 if (argsList.isEmpty()) {
                     printHelpAndExit("Expected list of profile names");

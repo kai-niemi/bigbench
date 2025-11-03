@@ -1,6 +1,9 @@
 package io.cockroachdb.bigbench.shell.support;
 
-import io.cockroachdb.bigbench.util.TimeFormat;
+import java.util.Locale;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.jline.terminal.Terminal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ansi.AnsiColor;
@@ -8,10 +11,6 @@ import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-
-import java.util.Locale;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 public class AnsiConsole {
@@ -69,69 +68,6 @@ public class AnsiConsole {
             terminal.writer().println();
             terminal.writer().flush();
             return this;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    private static final String CUU = "\u001B[A";
-
-    private static final String DL = "\u001B[1M";
-
-    private boolean progressBarEnabled = true;
-
-    public boolean toggleProgressBar() {
-        progressBarEnabled = !progressBarEnabled;
-        return progressBarEnabled;
-    }
-
-    public void progressBar(long current, long total, String label) {
-        if (!progressBarEnabled) {
-            return;
-        }
-
-        double p = (current + 0.0) / (Math.max(1, total) + 0.0);
-        int ticks = Math.max(0, (int) (30 * p) - 1);
-
-        String bar = String.format(
-                "%,9d/%-,9d %5.1f%% [%-30s] %s",
-                current,
-                total,
-                p * 100.0,
-                new String(new char[ticks]).replace('\0', '#') + ">",
-                label);
-
-        try {
-            lock.lock();
-            terminal.writer().println(CUU + "\r" + DL + bar);
-            terminal.writer().flush();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public void progressBar(long current, long total, String label, double requestsPerSec, long remainingMillis) {
-        if (!progressBarEnabled) {
-            return;
-        }
-
-        double p = (current + 0.0) / (Math.max(1, total) + 0.0);
-        int ticks = Math.max(0, (int) (30 * p) - 1);
-
-        String bar = String.format(
-                "%,9d/%-,9d %5.1f%% [%-30s] %,7.0f/s eta %s (%s)",
-                current,
-                total,
-                p * 100.0,
-                new String(new char[ticks]).replace('\0', '#') + ">",
-                requestsPerSec,
-                TimeFormat.millisecondsToDisplayString(remainingMillis),
-                label);
-
-        try {
-            lock.lock();
-            terminal.writer().println(CUU + "\r" + DL + bar);
-            terminal.writer().flush();
         } finally {
             lock.unlock();
         }

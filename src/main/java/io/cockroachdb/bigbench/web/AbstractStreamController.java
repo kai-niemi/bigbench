@@ -31,14 +31,14 @@ public abstract class AbstractStreamController {
     private final Map<QualifiedName, Table> cachedForms = new LinkedHashMap<>();
 
     protected Table lookupTable(QualifiedName qn) {
-        // First check cache, then introspect DB
         Table table;
-        if (cachedForms.containsKey(qn)) {
-            table = cachedForms.get(qn);
-        } else {
+        if (!cachedForms.containsKey(qn)) {
             table = SchemaExporter.exportTable(dataSource, qn.getSchema(),
                             model -> qn.getTable().equalsIgnoreCase(model.getName()))
                     .orElseThrow(() -> new NotFoundException("No such table: %s".formatted(qn)));
+            putTable(qn, table);
+        } else {
+            table = cachedForms.get(qn);
         }
         return table;
     }

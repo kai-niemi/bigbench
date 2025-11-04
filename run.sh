@@ -10,11 +10,12 @@ if [ "$(whoami)" == "root" ]; then
     exit 1
 fi
 
-jarfile=target/bigbench.jar
+jarfile=bigbench.jar
 profiles="default"
 
 if [ ! -f "$jarfile" ]; then
     ./mvnw clean install
+    ln -sf target/${jarfile} ${jarfile}
 fi
 
 java -jar ${jarfile} --profiles ${profiles} $*

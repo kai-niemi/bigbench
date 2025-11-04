@@ -3,8 +3,6 @@
 # http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
 ########################
 spring:
-  config:
-    import: optional:file:./samples/
   profiles:
     active: default
   application:
@@ -25,7 +23,7 @@ spring:
       showBuildName: true
       showGitBranch: true
     history:
-      name: work/bigbench.history
+      name: .log/bigbench.history
   batch:
     job:
       enabled: false
@@ -85,7 +83,7 @@ logging:
     console: "%clr(%d{${LOG_DATEFORMAT_PATTERN:HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:%5p}) [%t] %clr([%logger{39}]){cyan} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
     file: "%d{${LOG_DATEFORMAT_PATTERN:yyyy-MM-dd HH:mm:ss.SSS}} ${LOG_LEVEL_PATTERN:%5p} [%t] %logger{49} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
   file:
-    name: work/bigbench.log
+    name: .log/bigbench.log
   logback:
     rollingpolicy:
       max-history: 3

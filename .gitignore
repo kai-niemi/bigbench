@@ -2,7 +2,9 @@
 .mvn/
 target/
 work/
+.log/
 .DS_Store
 .DS_Store?
 Thumbs.db
+bigbench.jar
 cmd.txt

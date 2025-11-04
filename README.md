@@ -82,18 +82,7 @@ Load a sample schema:
 cockroach sql --insecure --host=localhost --database bigbench < samples/create-default.sql
 ```
 
-# Usage
-
-Quick tutorial of how to use each of the methods above towards a local database.
-
-## IMPORT INTO using CSV or Avro OCF streams over HTTP
-                                                   
-This method involves issuing the `IMPORT INTO` command that consumes either a CSV
-stream or Avro OCF stream from the bigbench API endpoint. All imports are on a per-table
-basis. In this example, we use the `customer` table with its schema defined in [create-default.sql](samples/create-default.sql).
-
-First start the server that provides the streaming endpoints for CockroachDB
-to use:
+Start the server that provides the streaming endpoints for CockroachDB to use:
 
 ```shell
 ./start.sh
@@ -107,37 +96,25 @@ Check that its running and can access the database:
 curl http://localhost:9090/public/customer.csv?rows=10
 ```
 
-Create an `IMPORT INTO` SQL file with 10,000 rows:
+# Usage
 
-```shell     
-curl --output work/customer-csv.sql http://localhost:9090/public/customer/csv/import-into.sql?rows=10K
-```
+Quick tutorial of how to use each of the methods above towards a local database.
 
-Because the `IMPORT INTO` command take tables offline, we can't use introspection to read the schema so
-we need to preload it and store it on the server (stored in-memory).
+## IMPORT INTO using CSV or Avro OCF streams over HTTP
+                                                   
+This method involves executing the `IMPORT INTO` command and consume either a CSV stream or Avro OCF stream 
+from the bigbench API endpoint. All imports are on a per-table basis. 
 
-First get a table schema form (a json document):
+In this example, we use the `customer` table with, defined in [create-default.sql](samples/create-default.sql).
 
-```shell
-curl --output work/customer-csv.json http://localhost:9090/public/customer.csv/form?rows=10K
-```
-
-Optionally, you can edit the json file above to change the row count, column generators or any other details before 
-POSTing them back for ephemeral storage.
-
-Post the form back, which will just store it on the server:
+Generate an `IMPORT INTO` SQL statement for this table with 10,000 rows in 6 parallel streams, and then feed 
+that to CockroachDB sql `stdin`:
 
 ```shell
-curl -d "@work/customer-csv.json" -H "Content-Type:application/json" -X POST http://localhost:9090/public/customer.csv/form
+curl http://localhost:9090/public/customer/csv/import-into.sql?rows=10K&nodes=6 | cockroach sql --insecure --database bigbench 
 ```
 
-Now go ahead and start the CSV import:
-
-```shell
-cockroach sql --insecure --host=localhost --database bigbench < work/customer-csv.sql
-```
-
-That should output 60K rows:
+It should output 60K rows:
 
 ```
         job_id        |  status   | fraction_completed | rows  | index_entries |  bytes
@@ -145,13 +122,35 @@ That should output 60K rows:
   1120181305635799041 | succeeded |                  1 | 60000 |             0 | 45924963
 ```
 
-After the import is completed, you can verify that there's data:
+If import jobs appears to be _stuck_ you can always cancel them like this:
+
+```postgresql
+CANCEL JOBS (WITH x AS (SHOW JOBS) SELECT job_id FROM x WHERE job_type='IMPORT' and status not in('failed','succeeded'))
+SELECT * FROM [show jobs] WHERE job_type='IMPORT' and status not in ('failed','succeeded');
+```
+
+After the import is completed, you can verify that the data is actually there:
 
 ```postgresql
 cockroach sql --insecure --host=localhost --database bigbench -e "select count(1) from customer"
 ```
 
-To repeat the same sequence of commands for Avro OCF:
+### Customize the import
+
+Alternatively, you can first download a table schema form and modify the row count, column generators or any 
+other detail before POSTing it back:
+
+```shell
+curl --output work/customer-csv.sql http://localhost:9090/public/customer/csv/import-into.sql?rows=10K
+# modify work/customer-csv.json as needed:
+curl --output work/customer-csv.json http://localhost:9090/public/customer.csv/form?rows=10K
+# post the form back to store it on server (since tables are offline)
+curl -d "@work/customer-csv.json" -H "Content-Type:application/json" -X POST http://localhost:9090/public/customer.csv/form
+# start import 
+cockroach sql --insecure --host=localhost --database bigbench < work/customer-csv.sql
+```
+
+To repeat the same sequence of commands for Avro OCF format:
 
 ```shell
 curl --output work/customer-avro.sql http://localhost:9090/public/customer/avro/import-into.sql?rows=10K
@@ -160,29 +159,23 @@ curl -d "@work/customer-avro.json" -H "Content-Type:application/json" -X POST ht
 cockroach sql --insecure --host=localhost --database bigbench < work/customer-avro.sql
 ```
 
-If your import jobs get stuck you can cancel them like this:
-
-```postgresql
-CANCEL JOBS (WITH x AS (SHOW JOBS) SELECT job_id FROM x WHERE job_type='IMPORT' and status not in('failed','succeeded'))
-SELECT * FROM [show jobs] WHERE job_type='IMPORT' and status not in ('failed','succeeded');
-```
-
 ## COPY using CSV streams over HTTP
 
-One alternative to `IMPORT INTO` is to use `COPY .. FROM`, which doesnt take tables offline.
+One alternative to `IMPORT INTO` is to use `COPY .. FROM`, which doesn't take the tables offline. It's not 
+as fast or efficient but close enough sometimes.
 
 Start the service as described in the previous section.
 
-Create a header file for copying the `customer` table from `stdin`:
+Create a header file for copying the `customer` table from `STDIN`:
 
 ```shell
-echo "COPY customer FROM STDIN WITH CSV DELIMITER ',' HEADER;" > work/header.csv
+echo "COPY customer FROM STDIN WITH CSV DELIMITER ',' HEADER;" > work/customer-header.txt
 ```
 
-Now go ahead and run COPY from `stdin`:
+Now go ahead and pipe things together and run COPY from `STDIN`:
 
 ```shell
-curl http://localhost:9090/public/customer.csv?rows=10K | cat work/header.csv - | cockroach sql --insecure --database bigbench
+curl http://localhost:9090/public/customer.csv?rows=10K | cat work/customer-header.txt - | cockroach sql --insecure --database bigbench
 ```
 
 ## INSERT batch statements with array unnesting

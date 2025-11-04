@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: "jdbc:postgresql://localhost:26257/bigbench?sslmode=disable"
+    url: "jdbc:postgresql://192.168.1.99:26257/bigbench?sslmode=disable"
     username: "root"
 server:
   port: 9090

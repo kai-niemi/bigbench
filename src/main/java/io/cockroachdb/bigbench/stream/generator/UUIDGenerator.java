@@ -1,4 +1,4 @@
-package io.cockroachdb.bigbench.generator;
+package io.cockroachdb.bigbench.stream.generator;
 
 import java.util.UUID;
 

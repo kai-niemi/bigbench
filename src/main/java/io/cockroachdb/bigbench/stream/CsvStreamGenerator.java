@@ -14,9 +14,9 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.sql.DataSource;
 
-import io.cockroachdb.bigbench.generator.ValueGenerator;
 import io.cockroachdb.bigbench.model.Column;
 import io.cockroachdb.bigbench.model.Table;
+import io.cockroachdb.bigbench.stream.generator.ValueGenerator;
 
 public class CsvStreamGenerator extends AbstractStreamGeneratorSupport implements StreamGenerator {
     private String delimiter = ",";

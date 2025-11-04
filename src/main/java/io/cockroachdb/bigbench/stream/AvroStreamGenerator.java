@@ -22,9 +22,9 @@ import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecordBase;
 
-import io.cockroachdb.bigbench.generator.ValueGenerator;
 import io.cockroachdb.bigbench.model.Column;
 import io.cockroachdb.bigbench.model.Table;
+import io.cockroachdb.bigbench.stream.generator.ValueGenerator;
 
 public class AvroStreamGenerator extends AbstractStreamGeneratorSupport {
     private final DataSource dataSource;
@@ -36,7 +36,7 @@ public class AvroStreamGenerator extends AbstractStreamGeneratorSupport {
     public AvroStreamGenerator(DataSource dataSource, Table table, boolean gzip) {
         this.dataSource = dataSource;
         this.table = table;
-        this.gzip =gzip;
+        this.gzip = gzip;
     }
 
     @Override

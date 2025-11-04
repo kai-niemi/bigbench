@@ -1,4 +1,4 @@
-package io.cockroachdb.bigbench.generator;
+package io.cockroachdb.bigbench.stream.generator;
 
 import io.cockroachdb.bigbench.model.Identity;
 import io.cockroachdb.bigbench.model.IdentityType;

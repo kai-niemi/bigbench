@@ -62,7 +62,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: info,shutdown,env,threaddump,metrics
+        include: info,shutdown,env,threaddump,metrics,prometheus
 ##################################
 server:
   port: 9090

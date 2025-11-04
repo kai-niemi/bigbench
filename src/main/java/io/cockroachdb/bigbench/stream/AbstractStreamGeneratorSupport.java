@@ -11,10 +11,9 @@ import javax.sql.DataSource;
 import io.cockroachdb.bigbench.expression.ExpressionRegistry;
 import io.cockroachdb.bigbench.expression.ExpressionRegistryBuilder;
 import io.cockroachdb.bigbench.expression.FunctionDef;
-import io.cockroachdb.bigbench.generator.ValueGenerator;
-import io.cockroachdb.bigbench.generator.ValueGenerators;
 import io.cockroachdb.bigbench.model.Column;
-import io.cockroachdb.bigbench.model.Table;
+import io.cockroachdb.bigbench.stream.generator.ValueGenerator;
+import io.cockroachdb.bigbench.stream.generator.ValueGenerators;
 
 public abstract class AbstractStreamGeneratorSupport implements StreamGenerator {
     protected static final Predicate<Column> VISIBLE_COLUMN_PREDICATE

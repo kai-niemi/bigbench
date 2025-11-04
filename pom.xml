@@ -80,6 +80,11 @@
 
         <!-- Other -->
         <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
         </dependency>

@@ -6,8 +6,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.UncheckedIOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -18,6 +16,7 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Pair;
 
 import io.cockroachdb.bigbench.util.AsciiArt;
 
@@ -35,7 +34,7 @@ public class ChunkedCsvStreamReader {
         this.delimiter = delimiter;
     }
 
-    public void readInputStream(InputStream inputStream, ChunkProcessor<List<String>> chunkProcessor) {
+    public Pair<Integer, Integer> readInputStream(InputStream inputStream, ChunkProcessor<List<String>> chunkProcessor) {
         // Used bounded blocking queue to conserve memory
         final BlockingQueue<String> blockingQueue = new LinkedBlockingQueue<>(Math.max(QUEUE_SIZE, chunkSize));
 
@@ -51,32 +50,9 @@ public class ChunkedCsvStreamReader {
             final CompletableFuture<Integer> consumerFuture = CompletableFuture.supplyAsync(() ->
                     drainQueue(blockingQueue, chunkSize, chunkProcessor));
 
-            final Instant startTime = Instant.now();
-
             CompletableFuture.allOf(consumerFuture, supplierFuture).join();
 
-            final int rowsProduced = supplierFuture.get();
-            final int rowsConsumed = consumerFuture.get();
-
-            final Duration duration = Duration.between(startTime, Instant.now());
-
-            AsciiArt.tock();
-
-            logger.info("""
-                    Finished reading input stream
-                    Produced chunks: %,d
-                      Produced rows: %,d
-                      Consumed rows: %,d
-                           Duration: %s
-                        Performance: %.1f rows/s
-                        %s""".formatted(
-                    rowsProduced / chunkSize,
-                    rowsProduced,
-                    rowsConsumed,
-                    duration,
-                    rowsConsumed / Math.max(1, (duration.toMillis() / 1000.0) % 60),
-                    rowsProduced != (rowsConsumed + 1) ? AsciiArt.flipTableRoughly() : AsciiArt.shrug())
-            );
+            return Pair.of(supplierFuture.get(), consumerFuture.get());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ProcessorException(e);

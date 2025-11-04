@@ -29,7 +29,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import jakarta.validation.Valid;
 
 import io.cockroachdb.bigbench.config.ProfileNames;
-import io.cockroachdb.bigbench.generator.ImportInto;
+import io.cockroachdb.bigbench.stream.generator.ImportInto;
 import io.cockroachdb.bigbench.model.Format;
 import io.cockroachdb.bigbench.model.QualifiedName;
 import io.cockroachdb.bigbench.model.Table;

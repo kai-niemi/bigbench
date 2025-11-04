@@ -1,4 +1,4 @@
-package io.cockroachdb.bigbench.generator;
+package io.cockroachdb.bigbench.stream.generator;
 
 import java.time.temporal.Temporal;
 
@@ -6,7 +6,6 @@ import javax.sql.DataSource;
 
 import org.springframework.util.StringUtils;
 
-import io.cockroachdb.bigbench.model.ConfigurationException;
 import io.cockroachdb.bigbench.model.Column;
 import io.cockroachdb.bigbench.model.Identity;
 import io.cockroachdb.bigbench.model.Range;
@@ -44,7 +43,7 @@ public abstract class ValueGenerators {
             return ValueGenerators.createValueSetGenerator(set);
         }
 
-        throw new ConfigurationException("No column value generator found", column);
+        throw new IllegalStateException("No column value generator found for " + column);
     }
 
 
